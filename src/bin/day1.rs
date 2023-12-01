@@ -1,14 +1,13 @@
-
-const REPLACES: [(&str, char);9] = [
-    ("one",   '1'),
-    ("two",   '2'),
+const REPLACES: [(&str, char); 9] = [
+    ("one", '1'),
+    ("two", '2'),
     ("three", '3'),
-    ("four",  '4'),
-    ("five",  '5'),
-    ("six",   '6'),
+    ("four", '4'),
+    ("five", '5'),
+    ("six", '6'),
     ("seven", '7'),
     ("eight", '8'),
-    ("nine",  '9'),
+    ("nine", '9'),
 ];
 
 pub fn main() {
@@ -28,12 +27,15 @@ pub fn main() {
     }
 
     // Do the actual logic pls and thx
-    let result: u32 = inp.lines().map(|line| {
-        // eprintln!("{line}");
-        let mut citer = line.chars().filter(char::is_ascii_digit);
-        let dig1 = citer.next().unwrap();
-        let dig2 = citer.last().unwrap_or(dig1);
-        format!("{dig1}{dig2}").parse::<u32>().unwrap()
-    }).sum();
+    let result: u32 = inp
+        .lines()
+        .map(|line| {
+            // eprintln!("{line}");
+            let mut citer = line.chars().filter(char::is_ascii_digit);
+            let dig1 = citer.next().unwrap();
+            let dig2 = citer.last().unwrap_or(dig1);
+            format!("{dig1}{dig2}").parse::<u32>().unwrap()
+        })
+        .sum();
     println!("Day1 result: {result}");
 }
