@@ -12,7 +12,7 @@ const REPLACES: [(&str, char);9] = [
 ];
 
 pub fn main() {
-    let mut inp = include_str!("input.txt").to_string();
+    let mut inp = include_str!("../day1/input.txt").to_string();
     // This is bad and messy, but it does work so hey
     let mut to_ins: Vec<_> = vec![];
     for (from, to) in REPLACES {
