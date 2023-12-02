@@ -2,10 +2,10 @@
 // cargo yelling at me.
 #[allow(dead_code)]
 struct Game {
-    id: usize,
-    max_blue: usize,
-    max_red: usize,
-    max_green: usize,
+    id: u32,
+    max_blue: u32,
+    max_red: u32,
+    max_green: u32,
 }
 
 fn parse_line(line: &str) -> Game {
@@ -33,7 +33,7 @@ fn parse_line(line: &str) -> Game {
 }
 
 fn main() {
-    let result: usize = include_str!("../day2/input.txt")
+    let result: u32 = include_str!("../day2/input.txt")
         .lines()
         .map(parse_line)
         .map(|game| game.max_green * game.max_blue * game.max_red)
