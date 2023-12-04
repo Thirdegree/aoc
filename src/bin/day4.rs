@@ -39,6 +39,7 @@ fn main() {
         .lines()
         .map(|line| line.into())
         .collect();
+    let winning_number_counts: Vec<_> = cards.iter().map(|c| c.winning_numbers().len()).collect();
     let mut count_cards_remain = vec![1; cards.len()];
     let mut tot_cards = 0;
     let mut still_going = true;
@@ -51,7 +52,7 @@ fn main() {
             .flat_map(|(idx, c)| {
                 *c -= 1;
                 tot_cards += 1;
-                idx + 1..=cards[idx].winning_numbers().len() + idx
+                idx + 1..=winning_number_counts[idx] + idx
             })
             .collect();
         to_inc.iter().for_each(|&c| count_cards_remain[c] += 1);
