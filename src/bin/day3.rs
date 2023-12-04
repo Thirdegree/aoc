@@ -116,7 +116,7 @@ fn main() {
     let parts = board.find_parts();
     let gear_pairs = board.gear_pairs(&parts);
     println!(
-        "{:?}",
+        "Day 3 result: {}",
         gear_pairs
             .iter()
             .map(|(g1, g2)| { board.part_number(g1) * board.part_number(g2) })

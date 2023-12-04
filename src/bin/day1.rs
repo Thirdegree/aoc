@@ -37,5 +37,5 @@ pub fn main() {
             format!("{dig1}{dig2}").parse::<u32>().unwrap()
         })
         .sum();
-    println!("Day1 result: {result}");
+    println!("Day 1 result: {result}");
 }
