@@ -66,15 +66,11 @@ fn main() {
         .split_whitespace()
         .map(|s| s.parse().unwrap())
         .collect();
-    let seeds: Vec<_> = seeds
-        .chunks(2)
-        .flat_map(|vals| vals[0]..=vals[0] + vals[1])
-        .collect();
     // luckily the maps are in-order so we don't need to parse the names to get that.
     let mappings: Vec<Mapping> = data.map(|block| block.into()).collect();
     // big enough lol
     let mut lowest_loc = 1_000_000_000;
-    for &s in &seeds {
+    for s in seeds.chunks(2).flat_map(|vals| vals[0]..=vals[0] + vals[1]) {
         let mut tracing = s;
         for m in &mappings {
             tracing = m.get_dest(tracing);
