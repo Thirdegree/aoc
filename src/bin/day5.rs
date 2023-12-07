@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 #[derive(Debug)]
 struct RangeMap {
     dest_range_start: u64,
@@ -37,22 +38,102 @@ impl From<&str> for Mapping {
     }
 }
 
+type RangeResult = (
+    Option<RangeInclusive<u64>>,
+    Option<RangeInclusive<u64>>,
+    Option<RangeInclusive<u64>>,
+);
+
 impl RangeMap {
-    fn get_dest(&self, source: &u64) -> Option<u64> {
-        if (self.source_range_start..=self.source_range_start + self.range_len).contains(source) {
-            Some(self.dest_range_start + (source - self.source_range_start))
+    /// Possible cases here:
+    /// 1. Source range entirely contains rangemap => 3 results; "before" range, "mapped" range,
+    ///    "after" range
+    /// 2. Source range is entirely contained by rangemap => 1 result; "mapped" range
+    /// 3. Source range starts before rangemap, ends inside => 2 results; "before" range, "mapped"
+    ///    range
+    /// 4. Source range starts inside rangemap, ends after => 2 results; "mapped" range, "after"
+    ///    range
+    /// 5. Source range is entirely before rangemap => 1 result; "before" range
+    /// 6. Source range is entirely after rangemap => 1 result; "after" range
+    /// "before" and "after" ranges are always unchanged from source, but of course might be
+    /// shorter
+    /// "before" and "after" ranges need to be checked against other rangemaps
+    fn get_dest_range(&self, source: &RangeInclusive<u64>) -> RangeResult {
+        let self_source_range_end = self.source_range_start + self.range_len;
+        if source.start() < &self.source_range_start && source.end() > &self_source_range_end {
+            // case 1
+            (
+                Some(*source.start()..=self.source_range_start - 1),
+                Some(self.dest_range_start..=self.dest_range_start + self.range_len), // whole dest range mapped
+                Some(self_source_range_end + 1..=*source.end()),
+            )
+        } else if source.start() > &self.source_range_start && source.end() < &self_source_range_end
+        {
+            // case 2
+            (
+                None,
+                Some(
+                    self.dest_range_start + (source.start() - self.source_range_start)
+                        ..=(self.dest_range_start + self.range_len)
+                            - (self_source_range_end - source.end()),
+                ),
+                None,
+            )
+        } else if source.start() < &self.source_range_start
+            && source.end() > &self.source_range_start
+        {
+            // case 3
+            (
+                Some(*source.start()..=self.source_range_start - 1),
+                Some(
+                    self.dest_range_start
+                        ..=(self.dest_range_start + self.range_len)
+                            - (self_source_range_end - source.end()),
+                ),
+                None,
+            )
+        } else if source.start() < &self_source_range_end && source.end() > &self_source_range_end {
+            // case 4
+            (
+                None,
+                Some(
+                    self.dest_range_start + (source.start() - self.source_range_start)
+                        ..=self.dest_range_start + self.range_len,
+                ),
+                Some(self_source_range_end + 1..=*source.end()),
+            )
+        } else if source.end() < &self.source_range_start {
+            // cases 5
+            (Some(source.clone()), None, None)
         } else {
-            None
+            // case 6
+            (None, None, Some(source.clone()))
         }
     }
 }
 
 impl Mapping {
-    fn get_dest(&self, source: u64) -> u64 {
-        self.ranges
-            .iter()
-            .find_map(|rangemap| rangemap.get_dest(&source))
-            .unwrap_or(source)
+    fn get_range_dests(&self, sources: Vec<RangeInclusive<u64>>) -> Vec<RangeInclusive<u64>> {
+        let mut unprocessed = sources;
+        let mut results = vec![];
+        for range in &self.ranges {
+            let mut to_add = vec![];
+            for r in &unprocessed {
+                let result = range.get_dest_range(r);
+                if let Some(before) = result.0 {
+                    to_add.push(before);
+                }
+                if let Some(mapped) = result.1 {
+                    results.push(mapped);
+                }
+                if let Some(after) = result.2 {
+                    to_add.push(after);
+                }
+            }
+            unprocessed = to_add
+        }
+        results.append(&mut unprocessed);
+        results
     }
 }
 
@@ -70,12 +151,12 @@ fn main() {
     let mappings: Vec<Mapping> = data.map(|block| block.into()).collect();
     // big enough lol
     let mut lowest_loc = 1_000_000_000;
-    for s in seeds.chunks(2).flat_map(|vals| vals[0]..=vals[0] + vals[1]) {
-        let mut tracing = s;
+    for s_range in seeds.chunks(2).map(|vals| vals[0]..=vals[0] + vals[1]) {
+        let mut tracing = vec![s_range];
         for m in &mappings {
-            tracing = m.get_dest(tracing);
+            tracing = m.get_range_dests(tracing);
         }
-        lowest_loc = lowest_loc.min(tracing);
+        lowest_loc = lowest_loc.min(*tracing.iter().min_by_key(|&r| r.start()).unwrap().start());
     }
     println!("Day 5 result: {lowest_loc}");
 }
