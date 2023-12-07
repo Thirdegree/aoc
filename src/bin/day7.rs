@@ -70,33 +70,27 @@ impl Hand {
             .for_each(|c| *card_counts_by_type.entry(c).or_insert(0) += 1);
         let n_js = card_counts_by_type.remove(&Card::J).unwrap_or(0);
         let n_card_types = card_counts_by_type.len();
-        if n_js == 5 || n_card_types == 1 {
-            // There is only 1 card type OTHER THAN Js, so they + Js must be 5 of a kind
-            // (or all Js)
-            Strength::FiveOfAKind
-        } else if n_card_types == 2 && card_counts_by_type.values().any(|&v| (v + n_js) == 4) {
-            Strength::FourOfAKind
-        } else if n_card_types == 2 {
-            Strength::FullHouse
-        } else if n_card_types == 3 && card_counts_by_type.values().any(|&v| (v + n_js) == 3) {
-            Strength::ThreeOfAKind
-        } else if n_card_types == 3 {
-            Strength::TwoPair
-        } else if n_card_types == 4 {
-            Strength::OnePair
-        } else {
-            Strength::HighCard
+        match n_card_types {
+            0 | 1 => Strength::FiveOfAKind,
+            2 if card_counts_by_type.values().any(|&v| (v + n_js) == 4) => Strength::FourOfAKind,
+            2 => Strength::FullHouse,
+            3 if card_counts_by_type.values().any(|&v| (v + n_js) == 3) => Strength::ThreeOfAKind,
+            3 => Strength::TwoPair,
+            4 => Strength::OnePair,
+            _ => Strength::HighCard,
         }
     }
     fn compare_eq_strength(&self, other: &Self) -> Ordering {
-        for (own_card, other_card) in self.cards.iter().zip(&other.cards) {
-            match own_card.cmp(other_card) {
-                Ordering::Greater => return Ordering::Greater,
-                Ordering::Less => return Ordering::Less,
-                Ordering::Equal => {}
-            }
-        }
-        Ordering::Equal
+        self.cards
+            .iter()
+            .zip(&other.cards)
+            .find_map(|(own_card, other_card)| {
+                match own_card.cmp(other_card) {
+                    v @ (Ordering::Greater | Ordering::Less) => Some(v),
+                    Ordering::Equal => None,
+                }
+            })
+            .unwrap_or(Ordering::Equal)
     }
 }
 
@@ -108,8 +102,7 @@ impl PartialOrd for Hand {
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.strength().cmp(&other.strength()) {
-            Ordering::Greater => Ordering::Greater,
-            Ordering::Less => Ordering::Less,
+            v @ (Ordering::Greater | Ordering::Less) => v,
             Ordering::Equal => self.compare_eq_strength(other),
         }
     }
