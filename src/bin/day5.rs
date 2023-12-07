@@ -150,13 +150,13 @@ fn main() {
     // luckily the maps are in-order so we don't need to parse the names to get that.
     let mappings: Vec<Mapping> = data.map(|block| block.into()).collect();
     // big enough lol
-    let mut lowest_loc = 1_000_000_000;
+    let mut min_locs = vec![];
     for s_range in seeds.chunks(2).map(|vals| vals[0]..=vals[0] + vals[1]) {
         let mut tracing = vec![s_range];
         for m in &mappings {
             tracing = m.get_range_dests(tracing);
         }
-        lowest_loc = lowest_loc.min(*tracing.iter().map(|r| r.start()).min().unwrap());
+        min_locs.push(*tracing.iter().map(|r| r.start()).min().unwrap());
     }
-    println!("Day 5 result: {lowest_loc}");
+    println!("Day 5 result: {}", min_locs.iter().min().unwrap());
 }
