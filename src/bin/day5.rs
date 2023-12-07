@@ -156,7 +156,7 @@ fn main() {
         for m in &mappings {
             tracing = m.get_range_dests(tracing);
         }
-        lowest_loc = lowest_loc.min(*tracing.iter().min_by_key(|&r| r.start()).unwrap().start());
+        lowest_loc = lowest_loc.min(*tracing.iter().map(|r| r.start()).min().unwrap());
     }
     println!("Day 5 result: {lowest_loc}");
 }
