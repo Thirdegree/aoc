@@ -1,25 +1,5 @@
 use std::collections::HashMap;
 
-fn lcm(first: u64, second: u64) -> u64 {
-    (first * second) / gcd(first, second)
-}
-
-fn gcd(first: u64, second: u64) -> u64 {
-    let mut max = first;
-    let mut min = second;
-    if min > max {
-        std::mem::swap(&mut min, &mut max);
-    }
-    loop {
-        let res = max % min;
-        if res == 0 {
-            return min;
-        }
-        max = min;
-        min = res;
-    }
-}
-
 fn main() {
     let mut data = include_str!("../day8/input.txt").lines();
     let instr = data.next().unwrap();
@@ -42,29 +22,56 @@ fn main() {
             cur_nodes.push(label);
         }
     }
-    let mut step_count = 0;
+    let expected_nodepaths = cur_nodes.len();
     let mut found_nodepaths = vec![];
-    for ins in instr.chars().cycle() {
+    for (step_count, ins) in instr.chars().cycle().enumerate() {
         let mut new_cur_nodes = vec![];
-        for (idx, cur_node) in cur_nodes.iter().enumerate() {
-            match ins {
-                'L' => new_cur_nodes.push(adj.get(cur_node).unwrap().0),
-                'R' => new_cur_nodes.push(adj.get(cur_node).unwrap().1),
+        for cur_node in cur_nodes {
+            let new_node = match ins {
+                'L' => adj.get(cur_node).unwrap().0,
+                'R' => adj.get(cur_node).unwrap().1,
                 _ => unreachable!(),
-            }
-            if new_cur_nodes.last().unwrap().ends_with('Z') {
-                found_nodepaths.push((idx, step_count + 1));
+            };
+            if new_node.ends_with('Z') {
+                found_nodepaths.push(step_count + 1);
+            } else {
+                // no need to track once we've found it
+                new_cur_nodes.push(new_node);
             }
         }
-        step_count += 1;
-        if found_nodepaths.len() == cur_nodes.len() {
+        if found_nodepaths.len() == expected_nodepaths {
             break;
         }
         cur_nodes = new_cur_nodes;
     }
     println!(
-        "Maybe it's this? {}",
-        found_nodepaths.iter().map(|(_, s)| *s).reduce(lcm).unwrap()
-    );
-    println!("Day 8 result: {step_count}")
+        "Day 8 result: {}",
+        found_nodepaths
+            .iter()
+            .map(|&s| s as u64)
+            .reduce(math::lcm)
+            .unwrap()
+    )
+}
+
+mod math {
+    pub fn lcm(first: u64, second: u64) -> u64 {
+        (first * second) / gcd(first, second)
+    }
+
+    fn gcd(first: u64, second: u64) -> u64 {
+        let mut max = first;
+        let mut min = second;
+        if min > max {
+            std::mem::swap(&mut min, &mut max);
+        }
+        loop {
+            let res = max % min;
+            if res == 0 {
+                return min;
+            }
+            max = min;
+            min = res;
+        }
+    }
 }
