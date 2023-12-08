@@ -112,7 +112,7 @@ impl Schematic {
 }
 
 fn main() {
-    let board: Schematic = include_str!("../day3/input.txt").into();
+    let board: Schematic = aoc_2023::include_data!(day3).into();
     let parts = board.find_parts();
     let gear_pairs = board.gear_pairs(&parts);
     println!(

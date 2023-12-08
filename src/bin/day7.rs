@@ -109,7 +109,7 @@ impl Ord for Hand {
 }
 
 fn main() {
-    let mut hands: Vec<(Hand, u32)> = include_str!("../day7/input.txt")
+    let mut hands: Vec<(Hand, u32)> = aoc_2023::include_data!(day7)
         .lines()
         .map(|line| {
             let (hand, value) = line.split_once(' ').unwrap();

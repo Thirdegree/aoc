@@ -35,7 +35,7 @@ impl Card {
 }
 
 fn main() {
-    let cards: Vec<Card> = include_str!("../day4/input.txt")
+    let cards: Vec<Card> = aoc_2023::include_data!(day4)
         .lines()
         .map(|line| line.into())
         .collect();

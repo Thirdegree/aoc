@@ -1,5 +1,5 @@
 fn main() {
-    let mut inp = include_str!("../day6/input.txt").lines();
+    let mut inp = aoc_2023::include_data!(day6).lines();
     let time: u64 = inp
         .next()
         .unwrap()

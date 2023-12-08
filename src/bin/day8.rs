@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 fn main() {
-    let mut data = include_str!("../day8/input.txt").lines();
+    let mut data = aoc_2023::include_data!(day8).lines();
     let instr = data.next().unwrap();
     data.next().unwrap();
 
@@ -49,29 +49,8 @@ fn main() {
         found_nodepaths
             .iter()
             .map(|&s| s as u64)
-            .reduce(math::lcm)
+            .reduce(aoc_2023::math::lcm)
             .unwrap()
     )
 }
 
-mod math {
-    pub fn lcm(first: u64, second: u64) -> u64 {
-        (first * second) / gcd(first, second)
-    }
-
-    fn gcd(first: u64, second: u64) -> u64 {
-        let mut max = first;
-        let mut min = second;
-        if min > max {
-            std::mem::swap(&mut min, &mut max);
-        }
-        loop {
-            let res = max % min;
-            if res == 0 {
-                return min;
-            }
-            max = min;
-            min = res;
-        }
-    }
-}

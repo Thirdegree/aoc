@@ -138,7 +138,7 @@ impl Mapping {
 }
 
 fn main() {
-    let mut data = include_str!("../day5/input.txt").split("\n\n");
+    let mut data = aoc_2023::include_data!(day5).split("\n\n");
     let seeds: Vec<u64> = data
         .next()
         .unwrap()

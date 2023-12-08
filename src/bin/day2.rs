@@ -40,7 +40,7 @@ impl FromStr for Game {
 }
 
 fn main() {
-    let result: u32 = include_str!("../day2/input.txt")
+    let result: u32 = aoc_2023::include_data!(day2)
         .lines()
         .filter_map(|line| line.parse().ok())
         .map(|game: Game| game.max_green * game.max_blue * game.max_red)
