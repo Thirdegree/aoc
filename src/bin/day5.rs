@@ -149,7 +149,6 @@ fn main() {
         .collect();
     // luckily the maps are in-order so we don't need to parse the names to get that.
     let mappings: Vec<Mapping> = data.map(|block| block.into()).collect();
-    // big enough lol
     let mut min_locs = vec![];
     for s_range in seeds.chunks(2).map(|vals| vals[0]..=vals[0] + vals[1]) {
         let mut tracing = vec![s_range];
