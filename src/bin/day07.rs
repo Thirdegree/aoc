@@ -116,8 +116,7 @@ fn main() -> anyhow::Result<()> {
         })
         .collect();
 
-    // sort and reverse (by virtue of cmp v2 to v1 instead of v1 to v2)
-    hands.sort_by(|v1, v2| v2.0.cmp(&v1.0));
+    hands.sort_by(|v1, v2| v1.0.cmp(&v2.0).reverse());
     println!(
         "Day 7 result: {}",
         hands

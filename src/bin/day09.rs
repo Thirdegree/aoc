@@ -2,6 +2,13 @@
 fn find_next(pattern: Vec<i32>) -> i32 {
     let mut layers = vec![pattern];
     while layers.last().unwrap().iter().any(|&n| n != 0) {
+        // Build each layer such that (for example):
+        // 0   3   6   9  12  15
+        //  turns into
+        //   3   3   3   3   3
+        //  which then turns into
+        //     0   0   0   0
+        //  at which point we are done.
         layers.push(
             layers
                 .last()
@@ -11,6 +18,8 @@ fn find_next(pattern: Vec<i32>) -> i32 {
                 .collect(),
         );
     }
+    // Reverse the layers, because we need to construct the next set of numbers from the "top"
+    // (zeros layer) to the bottom (inital layer)
     layers.reverse();
     let mut added_ns = vec![0];
     for l in &layers[1..] {
@@ -19,6 +28,7 @@ fn find_next(pattern: Vec<i32>) -> i32 {
         // for part 1
         // added_ns.push(l.last().unwrap() + added_ns.last().unwrap());
     }
+    // Last is the base layer, aka the next number in the sequence we want to predict
     *added_ns.last().unwrap()
 }
 

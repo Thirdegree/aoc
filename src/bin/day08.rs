@@ -50,8 +50,10 @@ fn main() {
         found_nodepaths
             .iter()
             .map(|&s| s as u64)
+            // math is fun!
+            // (also the problems must be constructed so this works,
+            // it's not hard to construct a counter example)
             .reduce(aoc_2023::math::lcm)
             .unwrap()
     );
 }
-
