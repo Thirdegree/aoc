@@ -1,27 +1,24 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-fn main() {
+use anyhow::Context;
+fn main() -> anyhow::Result<()> {
     let mut inp = aoc_2023::include_data!(day6).lines();
     let time: u64 = inp
         .next()
-        .unwrap()
+        .context("Bad input")?
         .strip_prefix("Time:")
-        .unwrap()
+        .context("Bad input")?
         .replace(' ', "")
-        .parse()
-        .unwrap();
+        .parse()?;
     let distance: u64 = inp
         .next()
-        .unwrap()
+        .context("Bad input")?
         .strip_prefix("Distance:")
-        .unwrap()
+        .context("Bad input")?
         .replace(' ', "")
-        .parse()
-        .unwrap();
-    let mut this_race_winning = 0;
-    for h in 1..=time {
-        if h * (time - h) > distance {
-            this_race_winning += 1;
-        }
-    }
-    println!("Day 6 result: {this_race_winning}");
+        .parse()?;
+    println!(
+        "Day 6 result: {}",
+        (1..=time).filter(|h| h * (time - h) > distance).count()
+    );
+    Ok(())
 }
