@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 fn main() {
     let mut inp = aoc_2023::include_data!(day6).lines();
     let time: u64 = inp
@@ -18,9 +19,9 @@ fn main() {
         .unwrap();
     let mut this_race_winning = 0;
     for h in 1..=time {
-        if h*(time-h) > distance {
+        if h * (time - h) > distance {
             this_race_winning += 1;
         }
     }
-    println!("Day 6 result: {}", this_race_winning);
+    println!("Day 6 result: {this_race_winning}");
 }

@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 use std::collections::HashSet;
 
 #[allow(dead_code)]
@@ -7,22 +9,24 @@ struct Card {
     card_numbers: HashSet<u32>,
 }
 
-impl From<&str> for Card {
-    fn from(value: &str) -> Self {
+impl TryFrom<&str> for Card {
+    type Error = std::num::ParseIntError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
         let (id_str, numbers) = value.split_once(": ").unwrap();
         let id = id_str.strip_prefix("Card ").unwrap();
         let (winning_numbers, card_numbers) = numbers.split_once('|').unwrap();
-        Card {
-            id: id.trim().parse().unwrap(),
+        Ok(Self {
+            id: id.trim().parse()?,
             winning_numbers: winning_numbers
                 .split_whitespace()
-                .map(|n| n.parse().unwrap())
-                .collect(),
+                .map(|n| n.trim().parse())
+                .collect::<anyhow::Result<_, Self::Error>>()?,
             card_numbers: card_numbers
                 .split_whitespace()
-                .map(|n| n.trim().parse().unwrap())
-                .collect(),
-        }
+                .map(|n| n.trim().parse())
+                .collect::<Result<_, Self::Error>>()?,
+        })
     }
 }
 
@@ -34,11 +38,11 @@ impl Card {
     }
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cards: Vec<Card> = aoc_2023::include_data!(day4)
         .lines()
-        .map(|line| line.into())
-        .collect();
+        .map(TryInto::try_into)
+        .collect::<Result<_, std::num::ParseIntError>>()?;
     let winning_number_counts: Vec<_> = cards.iter().map(|c| c.winning_numbers().len()).collect();
     let mut count_cards_remain = vec![1; cards.len()];
     let mut tot_cards = 0;
@@ -61,4 +65,5 @@ fn main() {
         }
     }
     println!("Day 4 result: {tot_cards}");
+    Ok(())
 }

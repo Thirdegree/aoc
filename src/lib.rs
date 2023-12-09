@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 #[macro_export]
 macro_rules! include_data {
     ($day:expr) => {{
@@ -13,6 +14,7 @@ macro_rules! include_data {
 }
 
 pub mod math {
+    #[must_use]
     pub fn lcm(first: u64, second: u64) -> u64 {
         (first * second) / gcd(first, second)
     }

@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 fn find_next(pattern: Vec<i32>) -> i32 {
     let mut layers = vec![pattern];
     while layers.last().unwrap().iter().any(|&n| n != 0) {

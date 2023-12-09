@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use std::{cmp::Ordering, collections::HashMap};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -57,7 +58,7 @@ struct Hand {
 impl From<&str> for Hand {
     fn from(value: &str) -> Self {
         Self {
-            cards: value.chars().map(|c| c.into()).collect(),
+            cards: value.chars().map(Into::into).collect(),
         }
     }
 }
@@ -84,11 +85,9 @@ impl Hand {
         self.cards
             .iter()
             .zip(&other.cards)
-            .find_map(|(own_card, other_card)| {
-                match own_card.cmp(other_card) {
-                    v @ (Ordering::Greater | Ordering::Less) => Some(v),
-                    Ordering::Equal => None,
-                }
+            .find_map(|(own_card, other_card)| match own_card.cmp(other_card) {
+                v @ (Ordering::Greater | Ordering::Less) => Some(v),
+                Ordering::Equal => None,
             })
             .unwrap_or(Ordering::Equal)
     }
@@ -108,7 +107,7 @@ impl Ord for Hand {
     }
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let mut hands: Vec<(Hand, u32)> = aoc_2023::include_data!(day7)
         .lines()
         .map(|line| {
@@ -124,7 +123,8 @@ fn main() {
         hands
             .iter()
             .enumerate()
-            .map(|(rank, (_, bet))| (rank + 1) as u32 * bet)
-            .sum::<u32>()
-    )
+            .map(|(rank, (_, bet))| Ok(u32::try_from(rank + 1)? * bet))
+            .sum::<anyhow::Result<u32>>()?
+    );
+    Ok(())
 }

@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use std::collections::HashMap;
 
 fn main() {
@@ -51,6 +52,6 @@ fn main() {
             .map(|&s| s as u64)
             .reduce(aoc_2023::math::lcm)
             .unwrap()
-    )
+    );
 }
 

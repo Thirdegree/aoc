@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use std::collections::HashMap;
 
 struct Schematic {
@@ -19,7 +20,7 @@ struct Symbol {
 
 impl From<&str> for Schematic {
     fn from(value: &str) -> Self {
-        Schematic {
+        Self {
             board: value.lines().map(|l| l.chars().collect()).collect(),
         }
     }
@@ -38,7 +39,7 @@ impl Schematic {
                     symbols.push(Symbol {
                         symbol: self.board[row][col],
                         location: (row, col),
-                    })
+                    });
                 }
             }
         }
@@ -66,7 +67,7 @@ impl Schematic {
                         if !part.symbols.is_empty() {
                             parts.push(part);
                         }
-                        cur_part_start = None
+                        cur_part_start = None;
                     } else if char.is_ascii_digit() && cur_part_start.is_none() {
                         // Just hit the START of a part span
                         cur_part_start = Some(cidx);
@@ -84,7 +85,7 @@ impl Schematic {
             .parse()
             .unwrap()
     }
-    fn gear_pairs<'a>(&'a self, parts: &'a [Part]) -> Vec<(&Part, &Part)> {
+    fn gear_pairs(parts: &[Part]) -> Vec<(&Part, &Part)> {
         let mut shared_symbols = HashMap::new();
         for (symbol, part) in parts
             .iter()
@@ -114,7 +115,7 @@ impl Schematic {
 fn main() {
     let board: Schematic = aoc_2023::include_data!(day3).into();
     let parts = board.find_parts();
-    let gear_pairs = board.gear_pairs(&parts);
+    let gear_pairs = Schematic::gear_pairs(&parts);
     println!(
         "Day 3 result: {}",
         gear_pairs

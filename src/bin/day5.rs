@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use std::ops::RangeInclusive;
 #[derive(Debug)]
 struct RangeMap {
@@ -14,7 +15,7 @@ impl From<&str> for RangeMap {
             .collect();
         let (dest_range_start, source_range_start, range_len) =
             (parsed_vals[0], parsed_vals[1], parsed_vals[2]);
-        RangeMap {
+        Self {
             dest_range_start,
             source_range_start,
             range_len,
@@ -32,9 +33,9 @@ struct Mapping {
 impl From<&str> for Mapping {
     fn from(value: &str) -> Self {
         let mut lines = value.lines();
-        let name = lines.next().unwrap().to_string();
-        let ranges = lines.map(|l| l.into()).collect();
-        Mapping { name, ranges }
+        let name = lines.next().map_or_else(String::new, ToString::to_string);
+        let ranges = lines.map(Into::into).collect();
+        Self { name, ranges }
     }
 }
 
@@ -58,6 +59,7 @@ impl RangeMap {
     /// "before" and "after" ranges are always unchanged from source, but of course might be
     /// shorter
     /// "before" and "after" ranges need to be checked against other rangemaps
+    #[allow(clippy::range_minus_one)]
     fn get_dest_range(&self, source: &RangeInclusive<u64>) -> RangeResult {
         let self_source_range_end = self.source_range_start + self.range_len;
         if source.start() < &self.source_range_start && source.end() > &self_source_range_end {
@@ -130,7 +132,7 @@ impl Mapping {
                     to_add.push(after);
                 }
             }
-            unprocessed = to_add
+            unprocessed = to_add;
         }
         results.append(&mut unprocessed);
         results
@@ -148,14 +150,14 @@ fn main() {
         .map(|s| s.parse().unwrap())
         .collect();
     // luckily the maps are in-order so we don't need to parse the names to get that.
-    let mappings: Vec<Mapping> = data.map(|block| block.into()).collect();
+    let mappings: Vec<Mapping> = data.map(Into::into).collect();
     let mut min_locs = vec![];
     for s_range in seeds.chunks(2).map(|vals| vals[0]..=vals[0] + vals[1]) {
         let mut tracing = vec![s_range];
         for m in &mappings {
             tracing = m.get_range_dests(tracing);
         }
-        min_locs.push(*tracing.iter().map(|r| r.start()).min().unwrap());
+        min_locs.push(*tracing.iter().map(RangeInclusive::start).min().unwrap());
     }
     println!("Day 5 result: {}", min_locs.iter().min().unwrap());
 }

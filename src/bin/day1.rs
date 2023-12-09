@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+
 const REPLACES: [(&str, char); 9] = [
     ("one", '1'),
     ("two", '2'),
@@ -10,6 +12,8 @@ const REPLACES: [(&str, char); 9] = [
     ("nine", '9'),
 ];
 
+/// # Panics
+/// * If input is malformed
 pub fn main() {
     let mut inp = aoc_2023::include_data!(day1).to_string();
     // This is bad and messy, but it does work so hey
@@ -32,7 +36,7 @@ pub fn main() {
         .map(|line| {
             // eprintln!("{line}");
             let mut citer = line.chars().filter(char::is_ascii_digit);
-            let dig1 = citer.next().unwrap();
+            let dig1 = citer.next().expect("Must have at least one charecter");
             let dig2 = citer.last().unwrap_or(dig1);
             format!("{dig1}{dig2}").parse::<u32>().unwrap()
         })

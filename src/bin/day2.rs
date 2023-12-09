@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use std::str::FromStr;
 
 // ID was used in part 1 but not part 2, but still part of the "Game" struct, but I don't want
@@ -17,7 +18,7 @@ impl FromStr for Game {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (id_str, grabs) = s.split_once(':').unwrap();
         let id_num = id_str.strip_prefix("Game ").unwrap();
-        let mut game = Game {
+        let mut game = Self {
             id: id_num.parse()?,
             max_red: 0,
             max_blue: 0,
@@ -45,7 +46,7 @@ fn main() {
         .filter_map(|line| line.parse().ok())
         .map(|game: Game| game.max_green * game.max_blue * game.max_red)
         .sum();
-    println!("Day 2 result: {result}")
+    println!("Day 2 result: {result}");
 }
 
 #[cfg(test)]
@@ -73,6 +74,6 @@ mod test {
                 max_green: 200
             }),
             "Game 11: 200 green".parse()
-        )
+        );
     }
 }
