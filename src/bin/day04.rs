@@ -45,25 +45,11 @@ fn main() -> anyhow::Result<()> {
         .collect::<Result<_, std::num::ParseIntError>>()?;
     let winning_number_counts: Vec<_> = cards.iter().map(|c| c.winning_numbers().len()).collect();
     let mut count_cards_remain = vec![1; cards.len()];
-    let mut tot_cards = 0;
-    let mut still_going = true;
-    while still_going {
-        still_going = false;
-        let to_inc: Vec<_> = count_cards_remain
-            .iter_mut()
-            .enumerate()
-            .filter(|(_, &mut c)| c != 0)
-            .flat_map(|(idx, c)| {
-                *c -= 1;
-                tot_cards += 1;
-                idx + 1..=winning_number_counts[idx] + idx
-            })
-            .collect();
-        to_inc.iter().for_each(|&c| count_cards_remain[c] += 1);
-        if !to_inc.is_empty() {
-            still_going = true;
+    for (idx, count) in winning_number_counts.iter().enumerate() {
+        for n in idx + 1..=idx + count {
+            count_cards_remain[n] += count_cards_remain[idx];
         }
     }
-    println!("Day 4 result: {tot_cards}");
+    println!("Day 4 result: {}", count_cards_remain.iter().sum::<u32>());
     Ok(())
 }
