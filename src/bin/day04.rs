@@ -21,7 +21,7 @@ impl TryFrom<&str> for Card {
             winning_numbers: winning_numbers
                 .split_whitespace()
                 .map(|n| n.trim().parse())
-                .collect::<anyhow::Result<_, Self::Error>>()?,
+                .collect::<Result<_, Self::Error>>()?,
             card_numbers: card_numbers
                 .split_whitespace()
                 .map(|n| n.trim().parse())
@@ -42,10 +42,9 @@ fn main() -> anyhow::Result<()> {
     let cards: Vec<Card> = aoc_2023::include_data!(day4)
         .lines()
         .map(TryInto::try_into)
-        .collect::<Result<_, std::num::ParseIntError>>()?;
-    let winning_number_counts: Vec<_> = cards.iter().map(|c| c.winning_numbers().len()).collect();
+        .collect::<Result<_, _>>()?;
     let mut count_cards_remain = vec![1; cards.len()];
-    for (idx, count) in winning_number_counts.iter().enumerate() {
+    for (idx, count) in cards.iter().map(|c| c.winning_numbers().len()).enumerate() {
         for n in idx + 1..=idx + count {
             count_cards_remain[n] += count_cards_remain[idx];
         }
