@@ -142,18 +142,18 @@ impl Grid {
                     }
                 }
             }
-            if [
+            if ![
                 horiz_symbols_before,
                 horiz_symbols_after,
                 vert_symbols_before,
                 vert_symbols_after,
             ]
             .iter()
-            .all(|s| {
+            .any(|s| {
                 // And given the above, we can say that even numbers of the same symbol cancel out
                 // on each side. So then, an "enclosed" space is one which has an odd number of
                 // pipe-equivilents as defined above, on every side.
-                s.len() % 2 != 0
+                s.len() % 2 == 0
             }) {
                 enclosed.push((x, y));
             }
