@@ -70,14 +70,10 @@ impl Grid {
             if loop_coords.contains(&(x, y)) {
                 continue;
             }
-            let xs_before = 0..x;
             let mut horiz_symbols_before = vec![];
-            let xs_after = x + 1..x_max;
             let mut horiz_symbols_after = vec![];
             let ys_before = 0..y;
-            let mut vert_symbols_before = vec![];
             let ys_after = y + 1..y_max;
-            let mut vert_symbols_after = vec![];
             // calculate if we are enclosed horiz
             for (range, target) in [
                 (ys_before, &mut horiz_symbols_before),
@@ -114,42 +110,7 @@ impl Grid {
                     }
                 }
             }
-            for (range, target) in [
-                (xs_before, &mut vert_symbols_before),
-                (xs_after, &mut vert_symbols_after),
-            ] {
-                for cur_x in range {
-                    let tile = clean_board[cur_x][y];
-                    // Exactly the same idea here, the first set of charecters is different but the
-                    // second set is the same. In any case, same logic applies as above
-                    match (tile, target.last()) {
-                        ('|' | '.', _) => (),
-                        ('-', Some('-'))
-                        | ('7', Some('J'))
-                        | ('J', Some('7'))
-                        | ('L', Some('F'))
-                        | ('F', Some('L')) => {
-                            target.pop();
-                        }
-                        ('L', Some('7'))
-                        | ('F', Some('J'))
-                        | ('7', Some('L'))
-                        | ('J', Some('F')) => {
-                            target.pop();
-                            target.push('-');
-                        }
-                        (t, _) => target.push(t),
-                    }
-                }
-            }
-            if ![
-                horiz_symbols_before,
-                horiz_symbols_after,
-                vert_symbols_before,
-                vert_symbols_after,
-            ]
-            .iter()
-            .any(|s| {
+            if ![horiz_symbols_before, horiz_symbols_after].iter().any(|s| {
                 // And given the above, we can say that even numbers of the same symbol cancel out
                 // on each side. So then, an "enclosed" space is one which has an odd number of
                 // pipe-equivilents as defined above, on every side.
