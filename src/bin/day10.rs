@@ -1,5 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
+use std::collections::HashSet;
+
 #[derive(PartialEq, Debug)]
 enum Directions {
     North,
@@ -83,6 +85,15 @@ impl Grid {
             ] {
                 for cur_y in range {
                     let tile = clean_board[x][cur_y];
+                    // So ok so, basic intuition here:
+                    // dashes don't matter when you're scanning horizontally, only corners and
+                    // verts
+                    // Corners can all be treated one of two ways. EITHER they cancel each other
+                    // out, or they add togeather to behave as a vert and a horiz at the same time
+                    // (whichever matters for the calculation)
+                    // So basically, we have here the pairings. The first set that are just pop'd
+                    // are the ones that cancel out. The second set which is pop and then push('|')
+                    // are the second set
                     match (tile, target.last()) {
                         ('-' | '.', _) => (),
                         ('|', Some('|'))
@@ -109,6 +120,8 @@ impl Grid {
             ] {
                 for cur_x in range {
                     let tile = clean_board[cur_x][y];
+                    // Exactly the same idea here, the first set of charecters is different but the
+                    // second set is the same. In any case, same logic applies as above
                     match (tile, target.last()) {
                         ('|' | '.', _) => (),
                         ('-', Some('-'))
@@ -136,15 +149,19 @@ impl Grid {
                 vert_symbols_after,
             ]
             .iter()
-            .all(|s| s.len() % 2 != 0)
-            {
+            .all(|s| {
+                // And given the above, we can say that even numbers of the same symbol cancel out
+                // on each side. So then, an "enclosed" space is one which has an odd number of
+                // pipe-equivilents as defined above, on every side.
+                s.len() % 2 != 0
+            }) {
                 enclosed.push((x, y));
             }
         }
         enclosed
     }
 
-    fn loop_coordinates(&self) -> Vec<(usize, usize)> {
+    fn loop_coordinates(&self) -> HashSet<(usize, usize)> {
         let mut cur_coords =
             self.tiles
                 .iter()
@@ -162,7 +179,7 @@ impl Grid {
                     ))
                 })
                 .unwrap();
-        let mut found_coords = vec![];
+        let mut found_coords = HashSet::new();
         loop {
             let valid_neighbors: Vec<(usize, usize)> =
                 self.valid_neighbors(cur_coords.0, cur_coords.1);
@@ -171,7 +188,7 @@ impl Grid {
                 2,
                 "There can only be exactly 2 neighbors in a valid loop"
             );
-            found_coords.push(cur_coords);
+            found_coords.insert(cur_coords);
             if let Some(&new_coords) = valid_neighbors.iter().find(|c| !found_coords.contains(c)) {
                 cur_coords = new_coords;
             } else {
