@@ -59,7 +59,6 @@ impl Grid {
             .collect()
     }
 
-    #[allow(clippy::similar_names)]
     fn enclosed_coords(&self) -> Vec<(usize, usize)> {
         let loop_coords = self.loop_coordinates();
         let clean_board: Vec<Vec<_>> = self.cleaned_board();
