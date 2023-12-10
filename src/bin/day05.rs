@@ -49,13 +49,43 @@ impl RangeMap {
     /// Possible cases here:
     /// 1. Source range entirely contains rangemap => 3 results; "before" range, "mapped" range,
     ///    "after" range
+    ///    ```
+    ///    |---------------------- Source range ----------------------|
+    ///             |--------------   RangeMap   --------------|
+    ///    |before ||_______________   mapped   _______________||after|
+    ///     ````
     /// 2. Source range is entirely contained by rangemap => 1 result; "mapped" range
+    ///    ```
+    ///             |-------------- Source Range --------------|
+    ///    |----------------------    RangeMap  ----------------------|
+    ///             |_______________   mapped   _______________|
+    ///    ```
     /// 3. Source range starts before rangemap, ends inside => 2 results; "before" range, "mapped"
     ///    range
+    ///    ```
+    ///    |---------------------- Source range ------------|
+    ///            |--------------    RangeMap  ----------------------|
+    ///    |before||__________   mapped   __________________|
+    ///    ```
     /// 4. Source range starts inside rangemap, ends after => 2 results; "mapped" range, "after"
     ///    range
+    ///    ```
+    ///              |---------------------- Source range ------------|
+    ///    |--------------    RangeMap  ----------------------|
+    ///              |__________________   mapped   __________||after |
+    ///    ```
     /// 5. Source range is entirely before rangemap => 1 result; "before" range
+    ///    ```
+    ///    |---- Source range -----|
+    ///                                 |-------    RangeMap  --------|
+    ///    |________before_________|
+    ///    ```
     /// 6. Source range is entirely after rangemap => 1 result; "after" range
+    ///    ```
+    ///                                        |---- Source range ----|
+    ///    |-------    RangeMap  --------|
+    ///                                        |_______after__________|
+    ///    ```
     /// "before" and "after" ranges are always unchanged from source, but of course might be
     /// shorter
     /// "before" and "after" ranges need to be checked against other rangemaps
