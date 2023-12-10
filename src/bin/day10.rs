@@ -207,21 +207,37 @@ impl Grid {
             })
             .collect()
     }
+    #[allow(dead_code)]
+    fn pprint(&self) {
+        let mut cleaned_board = self.cleaned_board();
+        for (x, y) in self.enclosed_coords() {
+            cleaned_board[x][y] = 'I';
+        }
+        let cleaned_board: Vec<_> = cleaned_board
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|&c| match c {
+                        '.' => ' ',
+                        '|' => '\u{2503}',
+                        '-' => '\u{2501}',
+                        'J' => '\u{251B}',
+                        'L' => '\u{2517}',
+                        '7' => '\u{2513}',
+                        'F' => '\u{250F}',
+                        'S' => 'S',
+                        p => p,
+                    })
+                    .collect::<String>()
+            })
+            .collect();
+        println!("{}", cleaned_board.join("\n"));
+    }
 }
 
 fn main() -> anyhow::Result<()> {
     let grid: Grid = aoc_2023::include_data!(day10).try_into()?;
-    let enclosed = grid.enclosed_coords();
-    // let mut clean_board = grid.cleaned_board();
-    // for &(x, y) in &enclosed {
-    //     clean_board[x][y] = 'I';
-    // }
-    // let printable: Vec<String> = clean_board
-    //     .iter()
-    //     .map(|r| r.iter().collect::<String>())
-    //     .collect();
-    // println!("{}", printable.join("\n"));
-
-    println!("Day 10 result: {}", enclosed.len());
+    // grid.pprint();
+    println!("Day 10 result: {}", grid.enclosed_coords().len());
     Ok(())
 }
