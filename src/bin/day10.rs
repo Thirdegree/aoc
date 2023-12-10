@@ -62,64 +62,64 @@ impl Grid {
     #[allow(clippy::similar_names)]
     fn enclosed_coords(&self) -> Vec<(usize, usize)> {
         let loop_coords = self.loop_coordinates();
-        let mut enclosed = vec![];
         let clean_board: Vec<Vec<_>> = self.cleaned_board();
         let x_max = self.tiles.len();
         let y_max = self.tiles[0].len();
-        for (x, y) in (0..x_max).flat_map(|x| (0..y_max).map(move |y| (x, y))) {
-            if loop_coords.contains(&(x, y)) {
-                continue;
-            }
-            let mut horiz_symbols_before = vec![];
-            let mut horiz_symbols_after = vec![];
-            let ys_before = 0..y;
-            let ys_after = y + 1..y_max;
-            // calculate if we are enclosed horiz
-            for (range, target) in [
-                (ys_before, &mut horiz_symbols_before),
-                (ys_after, &mut horiz_symbols_after),
-            ] {
-                for cur_y in range {
-                    let tile = clean_board[x][cur_y];
-                    // So ok so, basic intuition here:
-                    // dashes don't matter when you're scanning horizontally, only corners and
-                    // verts
-                    // Corners can all be treated one of two ways. EITHER they cancel each other
-                    // out, or they add togeather to behave as a vert and a horiz at the same time
-                    // (whichever matters for the calculation)
-                    // So basically, we have here the pairings. The first set that are just pop'd
-                    // are the ones that cancel out. The second set which is pop and then push('|')
-                    // are the second set
-                    match (tile, target.last()) {
-                        ('-' | '.', _) => (),
-                        ('|', Some('|'))
-                        | ('L', Some('J'))
-                        | ('J', Some('L'))
-                        | ('7', Some('F'))
-                        | ('F', Some('7')) => {
-                            target.pop();
+        (0..x_max)
+            .flat_map(|x| (0..y_max).map(move |y| (x, y)))
+            .filter_map(|(x, y)| {
+                if loop_coords.contains(&(x, y)) {
+                    return None;
+                }
+                let mut horiz_symbols_before = vec![];
+                let mut horiz_symbols_after = vec![];
+                let ys_before = 0..y;
+                let ys_after = y + 1..y_max;
+                // calculate if we are enclosed horiz
+                for (range, target) in [
+                    (ys_before, &mut horiz_symbols_before),
+                    (ys_after, &mut horiz_symbols_after),
+                ] {
+                    for cur_y in range {
+                        let tile = clean_board[x][cur_y];
+                        // So ok so, basic intuition here:
+                        // dashes don't matter when you're scanning horizontally, only corners and
+                        // verts
+                        // Corners can all be treated one of two ways. EITHER they cancel each other
+                        // out, or they add togeather to behave as a vert
+                        // So basically, we have here the pairings. The first set that are just pop'd
+                        // are the ones that cancel out. The second set which is pop and then push('|')
+                        // are the second set
+                        match (tile, target.last()) {
+                            ('-' | '.', _) => (),
+                            ('|', Some('|'))
+                            | ('L', Some('J'))
+                            | ('J', Some('L'))
+                            | ('7', Some('F'))
+                            | ('F', Some('7')) => {
+                                target.pop();
+                            }
+                            ('L', Some('7'))
+                            | ('F', Some('J'))
+                            | ('7', Some('L'))
+                            | ('J', Some('F')) => {
+                                target.pop();
+                                target.push('|');
+                            }
+                            (t, _) => target.push(t),
                         }
-                        ('L', Some('7'))
-                        | ('F', Some('J'))
-                        | ('7', Some('L'))
-                        | ('J', Some('F')) => {
-                            target.pop();
-                            target.push('|');
-                        }
-                        (t, _) => target.push(t),
                     }
                 }
-            }
-            if ![horiz_symbols_before, horiz_symbols_after].iter().any(|s| {
                 // And given the above, we can say that even numbers of the same symbol cancel out
                 // on each side. So then, an "enclosed" space is one which has an odd number of
                 // pipe-equivilents as defined above, on every side.
-                s.len() % 2 == 0
-            }) {
-                enclosed.push((x, y));
-            }
-        }
-        enclosed
+                if horiz_symbols_before.len() % 2 == 0 || horiz_symbols_after.len() % 2 == 0 {
+                    None
+                } else {
+                    Some((x, y))
+                }
+            })
+            .collect()
     }
 
     fn loop_coordinates(&self) -> HashSet<(usize, usize)> {
