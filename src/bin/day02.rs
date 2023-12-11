@@ -49,6 +49,22 @@ fn main() {
     println!("Day 2 result: {result}");
 }
 
+#[allow(dead_code)]
+fn part1() {
+    let result = aoc_2023::include_data!(day2)
+        .lines()
+        .filter_map(|line| line.parse().ok())
+        .filter_map(|game: Game| {
+            if game.max_green <= 13 && game.max_blue <= 14 && game.max_red <= 12 {
+                Some(game.id)
+            } else {
+                None
+            }
+        })
+        .sum::<u32>();
+    println!("Day 2 result: {result}");
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

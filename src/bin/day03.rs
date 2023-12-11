@@ -123,5 +123,6 @@ fn main() {
             .map(|(g1, g2)| { board.part_number(g1) * board.part_number(g2) })
             .sum::<u32>()
     );
-    // println!("Result for day 3: {}", parts.iter().sum::<u32>());
+    // part 1
+    // println!("Day 3 result: {}", parts.iter().map(|p| board.part_number(p)).sum::<u32>());
 }

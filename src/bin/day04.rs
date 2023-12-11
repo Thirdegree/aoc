@@ -52,3 +52,22 @@ fn main() -> anyhow::Result<()> {
     println!("Day 4 result: {}", count_cards_remain.iter().sum::<u32>());
     Ok(())
 }
+
+#[allow(dead_code)]
+fn part1() -> anyhow::Result<()> {
+    let cards: Vec<Card> = aoc_2023::include_data!(day4)
+        .lines()
+        .map(TryInto::try_into)
+        .collect::<Result<_, _>>()?;
+    println!(
+        "Day 4 result: {}",
+        cards
+            .iter()
+            .map(|c| match c.winning_numbers().len() {
+                0 => Ok(0),
+                n => Ok((2u64).pow(u32::try_from(n)? - 1)),
+            })
+            .sum::<anyhow::Result<u64>>()?
+    );
+    Ok(())
+}

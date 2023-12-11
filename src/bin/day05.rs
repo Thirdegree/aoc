@@ -190,4 +190,32 @@ fn main() {
         min_locs.push(*tracing.iter().map(RangeInclusive::start).min().unwrap());
     }
     println!("Day 5 result: {}", min_locs.iter().min().unwrap());
+    // part 1
+}
+
+#[allow(dead_code)]
+fn part1() {
+    // ok this is not actually how I initally wrote part 1, but I deleted that and now am comping
+    // back and re-implementing it
+    let mut data = aoc_2023::include_data!(day5).split("\n\n");
+    let seeds: Vec<u64> = data
+        .next()
+        .unwrap()
+        .strip_prefix("seeds:")
+        .unwrap()
+        .split_whitespace()
+        .map(|s| s.parse().unwrap())
+        .collect();
+    // luckily the maps are in-order so we don't need to parse the names to get that.
+    let mappings: Vec<Mapping> = data.map(Into::into).collect();
+    let mut min_locs = vec![];
+    for s in seeds {
+        let s_range = s..=s;
+        let mut tracing = vec![s_range];
+        for m in &mappings {
+            tracing = m.get_range_dests(tracing);
+        }
+        min_locs.push(*tracing.iter().map(RangeInclusive::start).min().unwrap());
+    }
+    println!("Day 5 result: {}", min_locs.iter().min().unwrap());
 }

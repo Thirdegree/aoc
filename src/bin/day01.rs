@@ -18,6 +18,7 @@ pub fn main() {
     let mut inp = aoc_2023::include_data!(day1).to_string();
     // This is bad and messy, but it does work so hey
     let mut to_ins: Vec<_> = vec![];
+    // Comment out this block for part 1
     for (from, to) in REPLACES {
         // figure out all the places we need to insert a digit
         to_ins.extend(inp.match_indices(from).map(|p| (p.0, to)));

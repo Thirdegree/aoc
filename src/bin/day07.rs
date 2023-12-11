@@ -1,5 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use std::{cmp::Ordering, collections::HashMap};
+// For part 1, switch the Part value in the hand constructer, and move J below between Q and T
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 enum Card {
@@ -51,14 +52,23 @@ enum Strength {
 }
 
 #[derive(PartialEq, Eq, Debug)]
+#[allow(dead_code)]
+enum Part {
+    Part1,
+    Part2
+}
+
+#[derive(PartialEq, Eq, Debug)]
 struct Hand {
     cards: Vec<Card>,
+    part: Part
 }
 
 impl From<&str> for Hand {
     fn from(value: &str) -> Self {
         Self {
             cards: value.chars().map(Into::into).collect(),
+            part: Part::Part2
         }
     }
 }
@@ -69,7 +79,11 @@ impl Hand {
         self.cards
             .iter()
             .for_each(|c| *card_counts_by_type.entry(c).or_insert(0) += 1);
-        let n_js = card_counts_by_type.remove(&Card::J).unwrap_or(0);
+        let n_js = if self.part == Part::Part2 {
+            card_counts_by_type.remove(&Card::J).unwrap_or(0)
+        } else {
+            0
+        };
         let n_card_types = card_counts_by_type.len();
         match n_card_types {
             0 | 1 => Strength::FiveOfAKind,
