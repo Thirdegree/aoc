@@ -18,7 +18,7 @@ fn main() -> anyhow::Result<()> {
         .parse()?;
     println!(
         "Day 6 result: {}",
-        (1..=time).filter(|h| h * (time - h) > distance).count()
+        (1..=time/2).filter(|h| h * (time - h) > distance).count() * 2 - 1
     );
     Ok(())
 }
