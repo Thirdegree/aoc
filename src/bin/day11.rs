@@ -125,7 +125,13 @@ impl Universe {
 fn main() {
     let mut universe: Universe = aoc_2023::include_data!(day11).into();
     // universe.expand(10); // part 1
-    universe.expand(1_000_000);
+    // Do not have to do it this way, only doing it to show I can!
+    // 1,000 * 2 * 5 * 20 * 5 == 1,000,000
+    universe.expand(1_000);
+    universe.expand(2);
+    universe.expand(5);
+    universe.expand(20);
+    universe.expand(5);
     // universe.pprint();
     println!(
         "Day 11 result: {:?}",
