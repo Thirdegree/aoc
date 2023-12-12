@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::sync::mpsc;
 
 use threadpool::ThreadPool;
@@ -100,36 +100,14 @@ fn can_place_group_at(elems: &[Space], group: &SpringGroup, idx: usize) -> bool 
     true
 }
 
-fn is_board_valid_so_far(
+// interesting here is the next Spring | Unknown after (or at) the given idx
+// so e.g. .??....???? -> vec![1, 1, 2, 7, 7, 7, 7, 7, 7, 7, 8, 9, 10] (all somes)
+fn find_number_possible_group_locations(
     elems: &[Space],
-    set_groups_pos: &[usize],
-    set_groups: &[SpringGroup],
+    groups: &[SpringGroup],
+    next_interesting_elem_for_idx: &[Option<usize>],
     cur_idx: usize,
-) -> bool {
-    elems[..cur_idx]
-        .iter()
-        .enumerate()
-        .filter_map(|(idx, s)| match s {
-            Space::Spring => Some(idx),
-            _ => None,
-        })
-        .all(|idx| {
-            set_groups
-                .iter()
-                .zip(set_groups_pos)
-                .any(|(g, &gidx)| (gidx..gidx + g.length).contains(&idx))
-        })
-}
-
-fn board_might_be_valid(elems: &[Space], groups: &[SpringGroup]) -> bool {
-    elems
-        .iter()
-        .filter(|s| matches!(s, Space::Spring | Space::Unknown))
-        .count()
-        >= groups.iter().map(|g| g.length).sum()
-}
-
-fn find_number_possible_group_locations(elems: &[Space], groups: &[SpringGroup]) -> usize {
+) -> usize {
     // (placed groups (no idx), next_interesting_index) => memoixed remaining index (offset +
     // interesing)
     // e.g. .??....???? 1, 1, 1
@@ -144,47 +122,50 @@ fn find_number_possible_group_locations(elems: &[Space], groups: &[SpringGroup])
     // if !board_might_be_valid(elems, groups) {
     //     return 0;
     // }
+    let relevent_elems = &elems[cur_idx..];
     let cur_group = &groups[0];
     let mut interesting = HashMap::new();
     let mut tot = 0;
-    let next_spring = elems
+    let next_spring = relevent_elems
         .iter()
         .enumerate()
         .find_map(|(idx, elem)| match elem {
             Space::Spring => Some(idx),
             _ => None,
         })
-        .unwrap_or(elems.len() - 1);
+        .unwrap_or(relevent_elems.len() - 1);
+    // dbg!(cur_group, &elems[cur_idx..]);
     for n in 0..=next_spring {
         let interesting_scan_cur = n + cur_group.length + 1;
-        if can_place_group_at(elems, cur_group, n) {
+        if can_place_group_at(relevent_elems, cur_group, n) {
             if groups.len() == 1 {
-                if interesting_scan_cur > elems.len()
-                    || !elems[interesting_scan_cur..]
+                if interesting_scan_cur > relevent_elems.len()
+                    || !relevent_elems[interesting_scan_cur..]
                         .iter()
                         .any(|s| matches!(s, Space::Spring))
                 {
+                    // println!("Got here - {next_spring}");
                     tot += 1;
                 }
 
                 continue;
             }
-            if interesting_scan_cur >= elems.len() {
+            if interesting_scan_cur >= relevent_elems.len() {
                 break;
             }
-            if let Some(entry) = elems[interesting_scan_cur..]
-                .iter()
-                .enumerate()
-                .find(|e| matches!(e.1, Space::Unknown | Space::Spring))
-            {
-                *interesting
-                    .entry(entry.0 + interesting_scan_cur)
-                    .or_insert(0) += 1;
+            // println!("{next_interesting_elem_for_idx:?}; {interesting_scan_cur}; {cur_idx}");
+            if let Some(entry) = next_interesting_elem_for_idx[interesting_scan_cur + cur_idx] {
+                *interesting.entry(entry).or_insert(0) += 1;
             }
         }
     }
     for (found, occurances) in &interesting {
-        let v_interesting = find_number_possible_group_locations(&elems[*found..], &groups[1..]);
+        let v_interesting = find_number_possible_group_locations(
+            elems,
+            &groups[1..],
+            next_interesting_elem_for_idx,
+            *found,
+        );
         tot += v_interesting * occurances;
     }
     // dbg!(&interesting);
@@ -193,81 +174,7 @@ fn find_number_possible_group_locations(elems: &[Space], groups: &[SpringGroup])
     tot
 }
 
-fn find_possible_boards(elems: &[Space], groups: &[SpringGroup]) -> Vec<Vec<Space>> {
-    let elems = elems.to_vec();
-    let mut valid_boards: VecDeque<(usize, Vec<usize>, &[SpringGroup])> = VecDeque::new();
-    valid_boards.push_back((0, vec![], groups));
-    let mut completed_boards = vec![];
-    let not_empty_idx_for_group: HashMap<&SpringGroup, Vec<usize>> = groups
-        .iter()
-        .map(|g| {
-            (
-                g,
-                elems
-                    .windows(g.length)
-                    .enumerate()
-                    .filter(|(_, spaces)| {
-                        spaces
-                            .iter()
-                            .all(|s| matches!(s, Space::Unknown | Space::Spring))
-                    })
-                    .map(|(sidx, _)| sidx)
-                    .collect(),
-            )
-        })
-        .collect();
-
-    let mut i = 0;
-    let board_len = elems.len();
-    while let Some((s_idx, cur_board, remaining_groups)) = valid_boards.pop_front() {
-        i += 1;
-        if i % 1_000_000 == 0 {
-            println!("{i}: n_valid_boards_in_queue: {}", valid_boards.len());
-        }
-        for &possible_idx in not_empty_idx_for_group.get(&remaining_groups[0]).unwrap() {
-            if possible_idx < s_idx {
-                continue;
-            }
-            if can_place_group_at(&elems, &remaining_groups[0], possible_idx) {
-                let mut new_board = cur_board.clone();
-                new_board.push(possible_idx);
-
-                let new_sidx = possible_idx + remaining_groups[0].length + 1;
-                let new_remaining_groups = &remaining_groups[1..];
-
-                if new_remaining_groups.is_empty() {
-                    completed_boards.push(new_board);
-                } else if new_sidx >= board_len {
-                    continue;
-                } else if is_board_valid_so_far(
-                    &elems,
-                    &new_board,
-                    &groups[..new_board.len()],
-                    new_sidx,
-                ) {
-                    valid_boards.push_back((new_sidx, new_board, new_remaining_groups));
-                }
-            }
-        }
-    }
-    completed_boards
-        .into_iter()
-        .map(|b| {
-            let mut new_board = elems.clone();
-            for (idx, g) in b.iter().zip(groups) {
-                for point in &mut new_board[*idx..*idx + g.length] {
-                    *point = Space::Spring;
-                }
-            }
-            new_board
-        })
-        .collect()
-}
-
 impl Row {
-    fn possible_springgroup_starts(&self) -> Vec<Vec<Space>> {
-        find_possible_boards(&self.elems, &self.groups)
-    }
     fn number_possible_springgroup_locations(&self) -> usize {
         let midpoint = self.groups.len() / 2;
         let (elems, groups) = if self.groups[..midpoint]
@@ -286,7 +193,16 @@ impl Row {
         } else {
             (self.elems.clone(), self.groups.clone())
         };
-        find_number_possible_group_locations(&elems, &groups)
+        let next_interesting_elem_for_idx = (0..elems.len())
+            .map(|n| {
+                elems[n..]
+                    .iter()
+                    .enumerate()
+                    .find(|e| matches!(e.1, Space::Spring | Space::Unknown))
+                    .map(|found| found.0 + n)
+            })
+            .collect::<Vec<_>>();
+        find_number_possible_group_locations(&elems, &groups, &next_interesting_elem_for_idx, 0)
     }
 }
 
@@ -318,14 +234,13 @@ fn main() -> anyhow::Result<()> {
     // }
     let (tx, rx) = mpsc::channel();
     let pool = ThreadPool::new(100);
-    for (n, row) in rows.into_iter().enumerate() {
+    for (n, row) in rows.into_iter().enumerate(){
         let thistx = tx.clone();
         pool.execute(move || {
+            // pprint_rowvec(&row.elems);
             let c = row.number_possible_springgroup_locations();
             println!("Finished {n}; {c} possible solutions");
-            thistx
-                .send(c)
-                .unwrap();
+            thistx.send(c).unwrap();
         });
     }
     pool.join();
