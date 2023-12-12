@@ -1,9 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use std::collections::HashMap;
-use std::sync::mpsc;
-
-use threadpool::ThreadPool;
 
 use anyhow::anyhow;
 
@@ -102,11 +99,12 @@ fn can_place_group_at(elems: &[Space], group: &SpringGroup, idx: usize) -> bool 
 
 // interesting here is the next Spring | Unknown after (or at) the given idx
 // so e.g. .??....???? -> vec![1, 1, 2, 7, 7, 7, 7, 7, 7, 7, 8, 9, 10] (all somes)
+#[cached::proc_macro::cached]
 fn find_number_possible_group_locations(
-    elems: &[Space],
-    groups: &[SpringGroup],
-    next_interesting_elem_for_idx: &[Option<usize>],
+    elems: Vec<Space>,
+    groups: Vec<SpringGroup>,
     cur_idx: usize,
+    cur_group_idx: usize,
 ) -> usize {
     // (placed groups (no idx), next_interesting_index) => memoixed remaining index (offset +
     // interesing)
@@ -119,11 +117,9 @@ fn find_number_possible_group_locations(
         // case below.
         return 0;
     }
-    // if !board_might_be_valid(elems, groups) {
-    //     return 0;
-    // }
+    let relevent_groups = &groups[cur_group_idx..];
     let relevent_elems = &elems[cur_idx..];
-    let cur_group = &groups[0];
+    let cur_group = &relevent_groups[0];
     let mut interesting = HashMap::new();
     let mut tot = 0;
     let next_spring = relevent_elems
@@ -134,17 +130,15 @@ fn find_number_possible_group_locations(
             _ => None,
         })
         .unwrap_or(relevent_elems.len() - 1);
-    // dbg!(cur_group, &elems[cur_idx..]);
     for n in 0..=next_spring {
         let interesting_scan_cur = n + cur_group.length + 1;
         if can_place_group_at(relevent_elems, cur_group, n) {
-            if groups.len() == 1 {
+            if relevent_groups.len() == 1 {
                 if interesting_scan_cur > relevent_elems.len()
                     || !relevent_elems[interesting_scan_cur..]
                         .iter()
                         .any(|s| matches!(s, Space::Spring))
                 {
-                    // println!("Got here - {next_spring}");
                     tot += 1;
                 }
 
@@ -153,56 +147,32 @@ fn find_number_possible_group_locations(
             if interesting_scan_cur >= relevent_elems.len() {
                 break;
             }
-            // println!("{next_interesting_elem_for_idx:?}; {interesting_scan_cur}; {cur_idx}");
-            if let Some(entry) = next_interesting_elem_for_idx[interesting_scan_cur + cur_idx] {
-                *interesting.entry(entry).or_insert(0) += 1;
+            if let Some(entry) = elems[interesting_scan_cur + cur_idx..]
+                .iter()
+                .enumerate()
+                .find(|elem| matches!(elem.1, Space::Unknown | Space::Spring))
+            {
+                *interesting
+                    .entry(entry.0 + interesting_scan_cur + cur_idx)
+                    .or_insert(0) += 1;
             }
         }
     }
     for (found, occurances) in &interesting {
         let v_interesting = find_number_possible_group_locations(
-            elems,
-            &groups[1..],
-            next_interesting_elem_for_idx,
+            elems.clone(),
+            groups.clone(),
             *found,
+            cur_group_idx + 1,
         );
         tot += v_interesting * occurances;
     }
-    // dbg!(&interesting);
-    // dbg!(&elems);
-    // dbg!(cur_group, tot);
     tot
 }
 
 impl Row {
     fn number_possible_springgroup_locations(&self) -> usize {
-        let midpoint = self.groups.len() / 2;
-        let (elems, groups) = if self.groups[..midpoint]
-            .iter()
-            .map(|g| g.length)
-            .sum::<usize>()
-            < self.groups[midpoint..]
-                .iter()
-                .map(|g| g.length)
-                .sum::<usize>()
-        {
-            (
-                self.elems.clone().into_iter().rev().collect(),
-                self.groups.clone().into_iter().rev().collect(),
-            )
-        } else {
-            (self.elems.clone(), self.groups.clone())
-        };
-        let next_interesting_elem_for_idx = (0..elems.len())
-            .map(|n| {
-                elems[n..]
-                    .iter()
-                    .enumerate()
-                    .find(|e| matches!(e.1, Space::Spring | Space::Unknown))
-                    .map(|found| found.0 + n)
-            })
-            .collect::<Vec<_>>();
-        find_number_possible_group_locations(&elems, &groups, &next_interesting_elem_for_idx, 0)
+        find_number_possible_group_locations(self.elems.clone(), self.groups.clone(), 0, 0)
     }
 }
 
@@ -224,28 +194,11 @@ fn main() -> anyhow::Result<()> {
         .lines()
         .map(TryInto::try_into)
         .collect::<anyhow::Result<_, _>>()?;
-    // for row in &rows[..1] {
-    //     pprint_rowvec(&row.elems);
-    //     println!("{:?}", row.groups);
-    //     for solution in row.possible_springgroup_starts() {
-    //         pprint_rowvec(&solution);
-    //     }
-    //     println!();
-    // }
-    let (tx, rx) = mpsc::channel();
-    let pool = ThreadPool::new(100);
-    for (n, row) in rows.into_iter().enumerate(){
-        let thistx = tx.clone();
-        pool.execute(move || {
-            // pprint_rowvec(&row.elems);
-            let c = row.number_possible_springgroup_locations();
-            println!("Finished {n}; {c} possible solutions");
-            thistx.send(c).unwrap();
-        });
-    }
-    pool.join();
-    drop(tx);
-    println!("Day 12 result: {}", rx.iter().sum::<usize>());
+    let result: usize = rows
+        .iter()
+        .map(Row::number_possible_springgroup_locations)
+        .sum();
+    println!("Day 12 result: {result}");
     Ok(())
 }
 
