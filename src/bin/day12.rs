@@ -134,7 +134,7 @@ fn find_number_possible_group_locations(
         let interesting_scan_cur = n + cur_group.length + 1;
         if can_place_group_at(relevent_elems, cur_group, n) {
             if relevent_groups.len() == 1 {
-                if interesting_scan_cur > relevent_elems.len()
+                if interesting_scan_cur >= relevent_elems.len()
                     || !relevent_elems[interesting_scan_cur..]
                         .iter()
                         .any(|s| matches!(s, Space::Spring))
