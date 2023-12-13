@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::{fmt::Display, ops::Range};
+use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Point {
@@ -59,13 +59,11 @@ fn find_horizontal_mirrored_line(elems: &Vec<Vec<Point>>) -> Option<usize> {
         for n in 0..num_mirrored_lines {
             let top = &elems[line - n];
             let bottom = &elems[line + n + 1];
-            // println!("{:?}", top);
-            // println!("{:?}", bottom);
-            for (telem, belem) in top.iter().zip(bottom) {
-                if telem != belem {
-                    num_smudges += 1;
-                }
-            }
+            num_smudges += top
+                .iter()
+                .zip(bottom)
+                .filter(|(telem, belem)| telem != belem)
+                .count();
         }
         // if num_smudges == 0 { // part 1
         if num_smudges == 1 {
@@ -111,10 +109,10 @@ fn main() {
     let mut tot = 0;
     for pattern in patterns {
         if let Some(r) = pattern.find_horizontal_mirrored_line() {
-            tot += 100 * (0..=r).count();
+            tot += 100 * (r + 1);
         } else {
             let r = pattern.find_vertical_mirrored_line().unwrap();
-            tot += (0..=r).count();
+            tot += r + 1;
         }
     }
     println!("Day 13 result: {tot}");
