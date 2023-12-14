@@ -1,10 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::{
-    collections::{hash_map::DefaultHasher, HashSet},
-    fmt::Display,
-    hash::{Hash, Hasher},
-};
+use std::{collections::HashSet, fmt::Display};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 enum Space {
