@@ -219,8 +219,6 @@ fn main() {
     let target_minus_init = target - till_first_cycle_starts;
     let remaining = target_minus_init % main_cycle_len;
 
-    dbg!(till_first_cycle_starts);
-    dbg!(main_cycle_len);
     // -1 because we've done till_first_cycle_starts + main_cycle_len + 1 by a "quirk" of how the loop above was written
     // (by which I mean, confusingly)
     for _ in 0..remaining - 1 {
