@@ -1,6 +1,10 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::{collections::HashSet, fmt::Display};
+use std::{
+    collections::{hash_map::DefaultHasher, HashSet},
+    fmt::Display,
+    hash::{Hash, Hasher},
+};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 enum Space {
@@ -72,6 +76,12 @@ impl Board {
                 n_rocks * (n_rows - idx)
             })
             .sum()
+    }
+    fn cycle(&mut self) {
+        self.tilt(&Direction::North);
+        self.tilt(&Direction::West);
+        self.tilt(&Direction::South);
+        self.tilt(&Direction::East);
     }
     #[allow(
         clippy::too_many_lines,
@@ -185,16 +195,15 @@ impl Board {
 }
 
 fn main() {
-    let mut board: Board = aoc_2023::include_data!(day14).into();
-    let mut known_boardstates = HashSet::new();
+    let mut board: Board = aoc_2023::include_data!(day14, sample).into();
+    // guessing that total number of enountered boardstates is < 2000, purely for performance
+    // benefits
+    let mut known_boardstates = HashSet::with_capacity(1_000);
     let mut till_first_cycle_starts = None;
     let mut main_cycle_len = None;
     let target = 1_000_000_000;
     for i in 0.. {
-        board.tilt(&Direction::North);
-        board.tilt(&Direction::West);
-        board.tilt(&Direction::South);
-        board.tilt(&Direction::East);
+        board.cycle();
         if known_boardstates.contains(&board.elems) {
             if let Some(first_cycle) = till_first_cycle_starts {
                 main_cycle_len = Some(i - first_cycle);
@@ -210,13 +219,12 @@ fn main() {
     let target_minus_init = target - till_first_cycle_starts;
     let remaining = target_minus_init % main_cycle_len;
 
+    dbg!(till_first_cycle_starts);
+    dbg!(main_cycle_len);
     // -1 because we've done till_first_cycle_starts + main_cycle_len + 1 by a "quirk" of how the loop above was written
     // (by which I mean, confusingly)
     for _ in 0..remaining - 1 {
-        board.tilt(&Direction::North);
-        board.tilt(&Direction::West);
-        board.tilt(&Direction::South);
-        board.tilt(&Direction::East);
+        board.cycle();
     }
     // println!("{board}");
     println!("Day 14 result: {}", board.load());
