@@ -50,8 +50,9 @@ fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
 }
 
 fn find_horizontal_mirrored_line(elems: &Vec<Vec<Point>>) -> Option<usize> {
+    let len = elems.len();
     for line in 0..elems.len() {
-        let num_mirrored_lines = (elems.len() - (line + 1)).min(line + 1);
+        let num_mirrored_lines = (len - (line + 1)).min(line + 1);
         if num_mirrored_lines == 0 {
             continue;
         }
@@ -67,6 +68,7 @@ fn find_horizontal_mirrored_line(elems: &Vec<Vec<Point>>) -> Option<usize> {
         }
         // if num_smudges == 0 { // part 1
         if num_smudges == 1 {
+            // part 2
             return Some(line);
         }
     }
