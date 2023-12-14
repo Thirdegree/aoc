@@ -46,7 +46,7 @@ fn main() {
         .filter_map(|line| line.parse().ok())
         .map(|game: Game| game.max_green * game.max_blue * game.max_red)
         .sum();
-    println!("Day 2 result: {result}");
+    println!("Day 02 result: {result}");
 }
 
 #[allow(dead_code)]

@@ -85,6 +85,8 @@ impl Board {
         clippy::needless_range_loop
     )]
     fn tilt(&mut self, direction: &Direction) {
+        // This could probably be refactored, but they're _just_ dissimilar enough that it's
+        // non-trivial
         match direction {
             Direction::North => {
                 let mut free_spaces = vec![None; self.elems[0].len()];
@@ -191,7 +193,7 @@ impl Board {
 }
 
 fn main() {
-    let mut board: Board = aoc_2023::include_data!(day14, sample).into();
+    let mut board: Board = aoc_2023::include_data!(day14).into();
     // guessing that total number of enountered boardstates is < 2000, purely for performance
     // benefits
     let mut known_boardstates = HashSet::with_capacity(1_000);

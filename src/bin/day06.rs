@@ -17,7 +17,7 @@ fn main() -> anyhow::Result<()> {
         .replace(' ', "")
         .parse()?;
     println!(
-        "Day 6 result: {}",
+        "Day 06 result: {}",
         (1..=time).filter(|h| h * (time - h) > distance).count()
     );
     Ok(())

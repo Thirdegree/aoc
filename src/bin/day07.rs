@@ -132,7 +132,7 @@ fn main() -> anyhow::Result<()> {
 
     hands.sort_by(|v1, v2| v1.0.cmp(&v2.0).reverse());
     println!(
-        "Day 7 result: {}",
+        "Day 07 result: {}",
         hands
             .iter()
             .enumerate()

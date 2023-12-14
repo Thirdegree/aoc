@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<()> {
             count_cards_remain[n] += count_cards_remain[idx];
         }
     }
-    println!("Day 4 result: {}", count_cards_remain.iter().sum::<u32>());
+    println!("Day 04 result: {}", count_cards_remain.iter().sum::<u32>());
     Ok(())
 }
 

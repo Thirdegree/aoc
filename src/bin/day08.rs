@@ -46,7 +46,7 @@ fn main() {
         cur_nodes = new_cur_nodes;
     }
     println!(
-        "Day 8 result: {}",
+        "Day 08 result: {}",
         found_nodepaths
             .iter()
             .map(|&s| s as u64)

@@ -42,5 +42,5 @@ fn main() {
         })
         .map(find_next)
         .sum();
-    println!("Day 9 result: {result}");
+    println!("Day 09 result: {result}");
 }

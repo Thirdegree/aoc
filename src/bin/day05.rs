@@ -189,7 +189,7 @@ fn main() {
         }
         min_locs.push(*tracing.iter().map(RangeInclusive::start).min().unwrap());
     }
-    println!("Day 5 result: {}", min_locs.iter().min().unwrap());
+    println!("Day 05 result: {}", min_locs.iter().min().unwrap());
     // part 1
 }
 
