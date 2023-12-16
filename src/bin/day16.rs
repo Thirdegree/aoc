@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::{fmt::Display, time::Duration};
+use std::fmt::Display;
 
 #[derive(Clone, PartialEq, Eq)]
 enum Direction {
@@ -114,15 +114,15 @@ impl Board {
         let y_edge = self.board.len() - 1;
         let x_edge = self.board[0].len() - 1;
         let dirs = match pos {
-            (0, 0) => vec![Direction::Down, Direction::Right],
-            (0, y) if y == y_edge => vec![Direction::Up, Direction::Right],
-            (x, 0) if x == x_edge => vec![Direction::Down, Direction::Left],
-            (x, y) if y == y_edge && x == x_edge => vec![Direction::Up, Direction::Left],
-            (0, _) => vec![Direction::Right],
-            (x, _) if x == x_edge => vec![Direction::Left],
-            (_, 0) => vec![Direction::Down],
-            (_, y) if y == y_edge => vec![Direction::Up],
-            _ => unreachable!(),
+            (0, 0) => vec![Direction::Down, Direction::Right], // Top left
+            (0, y) if y == y_edge => vec![Direction::Up, Direction::Right], // Top right
+            (x, 0) if x == x_edge => vec![Direction::Down, Direction::Left], // bottom left
+            (x, y) if y == y_edge && x == x_edge => vec![Direction::Up, Direction::Left], // bottomright
+            (0, _) => vec![Direction::Right], // left side
+            (x, _) if x == x_edge => vec![Direction::Left], // right side
+            (_, 0) => vec![Direction::Down],  // top
+            (_, y) if y == y_edge => vec![Direction::Up], // bottom
+            _ => unreachable!(),              // NO
         };
         let mut boards = vec![];
         for dir in dirs {
@@ -229,8 +229,6 @@ fn main() {
     for corner in board.edges() {
         for mut board in board.start_at(corner) {
             while board.step() {}
-            // board.print_energized();
-            // println!();
             energized = energized.max(
                 board
                     .seen_directions
@@ -241,13 +239,5 @@ fn main() {
             );
         }
     }
-    // let b = &mut board.start_at((3, 0))[0];
-    // while b.step() {
-    //     println!("{b}");
-    //     println!();
-    //     std::thread::sleep(Duration::from_millis(100));
-    // }
-    // b.print_energized();
     println!("Day 16 result: {energized}");
-    // board.print_energized();
 }
