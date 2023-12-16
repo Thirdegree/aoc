@@ -31,62 +31,35 @@ impl Light {
     fn next_step(&self, cur_space: Option<char>) -> Vec<Self> {
         let mut next = vec![];
         if let Some(space) = cur_space {
-            match space {
+            let new_dirs = match space {
                 '|' if matches!(self.current_direction, Direction::Left | Direction::Right) => {
-                    for dir in [Direction::Up, Direction::Down] {
-                        if let Some(new_pos) = dir.next(self.current_possition) {
-                            next.push(Self {
-                                current_direction: dir,
-                                current_possition: new_pos,
-                            });
-                        }
-                    }
+                    vec![Direction::Up, Direction::Down]
                 }
+
                 '-' if matches!(self.current_direction, Direction::Down | Direction::Up) => {
-                    for dir in [Direction::Left, Direction::Right] {
-                        if let Some(new_pos) = dir.next(self.current_possition) {
-                            next.push(Self {
-                                current_direction: dir,
-                                current_possition: new_pos,
-                            });
-                        }
-                    }
+                    vec![Direction::Left, Direction::Right]
                 }
-                '/' => {
-                    let new_direction = match self.current_direction {
-                        Direction::Right => Direction::Up,
-                        Direction::Up => Direction::Right,
-                        Direction::Left => Direction::Down,
-                        Direction::Down => Direction::Left,
-                    };
-                    if let Some(new_pos) = new_direction.next(self.current_possition) {
-                        next.push(Self {
-                            current_direction: new_direction,
-                            current_possition: new_pos,
-                        });
-                    }
-                }
-                '\\' => {
-                    let new_direction = match self.current_direction {
-                        Direction::Right => Direction::Down,
-                        Direction::Down => Direction::Right,
-                        Direction::Left => Direction::Up,
-                        Direction::Up => Direction::Left,
-                    };
-                    if let Some(new_pos) = new_direction.next(self.current_possition) {
-                        next.push(Self {
-                            current_direction: new_direction,
-                            current_possition: new_pos,
-                        });
-                    }
-                }
-                _ => {
-                    if let Some(new_pos) = self.current_direction.next(self.current_possition) {
-                        next.push(Self {
-                            current_direction: self.current_direction.clone(),
-                            current_possition: new_pos,
-                        });
-                    }
+
+                '/' => vec![match self.current_direction {
+                    Direction::Right => Direction::Up,
+                    Direction::Up => Direction::Right,
+                    Direction::Left => Direction::Down,
+                    Direction::Down => Direction::Left,
+                }],
+                '\\' => vec![match self.current_direction {
+                    Direction::Right => Direction::Down,
+                    Direction::Down => Direction::Right,
+                    Direction::Left => Direction::Up,
+                    Direction::Up => Direction::Left,
+                }],
+                _ => vec![self.current_direction.clone()],
+            };
+            for dir in new_dirs {
+                if let Some(new_pos) = dir.next(self.current_possition) {
+                    next.push(Self {
+                        current_direction: dir,
+                        current_possition: new_pos,
+                    });
                 }
             }
         }
@@ -136,23 +109,6 @@ impl Board {
         }
         boards
     }
-}
-
-impl From<&str> for Board {
-    fn from(value: &str) -> Self {
-        let seen_directions: Vec<Vec<_>> = value
-            .lines()
-            .map(|l| l.chars().map(|_| vec![]).collect())
-            .collect();
-        Self {
-            light: vec![],
-            board: value.lines().map(|l| l.chars().collect()).collect(),
-            seen_directions,
-        }
-    }
-}
-
-impl Board {
     fn step(&mut self) -> bool {
         let mut all_new_light = vec![];
         let mut new_light = false;
@@ -198,6 +154,20 @@ impl Board {
         }
         let lines: Vec<_> = board.iter().map(|l| l.iter().collect::<String>()).collect();
         println!("{}", lines.join("\n"));
+    }
+}
+
+impl From<&str> for Board {
+    fn from(value: &str) -> Self {
+        let seen_directions: Vec<Vec<_>> = value
+            .lines()
+            .map(|l| l.chars().map(|_| vec![]).collect())
+            .collect();
+        Self {
+            light: vec![],
+            board: value.lines().map(|l| l.chars().collect()).collect(),
+            seen_directions,
+        }
     }
 }
 
