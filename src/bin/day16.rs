@@ -21,7 +21,6 @@ impl Direction {
     }
 }
 
-#[derive(Clone)]
 struct Light {
     current_direction: Direction,
     current_possition: (usize, usize),
@@ -29,45 +28,50 @@ struct Light {
 
 impl Light {
     fn next_step(&self, cur_space: Option<char>) -> Vec<Self> {
-        let mut next = vec![];
-        if let Some(space) = cur_space {
-            let new_dirs = match space {
+        cur_space.map_or_else(Vec::new, |space| {
+            match space {
                 '|' if matches!(self.current_direction, Direction::Left | Direction::Right) => {
-                    vec![Direction::Up, Direction::Down]
+                    [Some(Direction::Up), Some(Direction::Down)]
                 }
 
                 '-' if matches!(self.current_direction, Direction::Down | Direction::Up) => {
-                    vec![Direction::Left, Direction::Right]
+                    [Some(Direction::Left), Some(Direction::Right)]
                 }
 
-                '/' => vec![match self.current_direction {
-                    Direction::Right => Direction::Up,
-                    Direction::Up => Direction::Right,
-                    Direction::Left => Direction::Down,
-                    Direction::Down => Direction::Left,
-                }],
-                '\\' => vec![match self.current_direction {
-                    Direction::Right => Direction::Down,
-                    Direction::Down => Direction::Right,
-                    Direction::Left => Direction::Up,
-                    Direction::Up => Direction::Left,
-                }],
-                _ => vec![self.current_direction.clone()],
-            };
-            for dir in new_dirs {
-                if let Some(new_pos) = dir.next(self.current_possition) {
-                    next.push(Self {
-                        current_direction: dir,
-                        current_possition: new_pos,
-                    });
-                }
+                '/' => [
+                    Some(match self.current_direction {
+                        Direction::Right => Direction::Up,
+                        Direction::Up => Direction::Right,
+                        Direction::Left => Direction::Down,
+                        Direction::Down => Direction::Left,
+                    }),
+                    None,
+                ],
+                '\\' => [
+                    Some(match self.current_direction {
+                        Direction::Right => Direction::Down,
+                        Direction::Down => Direction::Right,
+                        Direction::Left => Direction::Up,
+                        Direction::Up => Direction::Left,
+                    }),
+                    None,
+                ],
+                _ => [Some(self.current_direction.clone()), None],
             }
-        }
-        next
+            .into_iter()
+            .flatten()
+            .filter_map(|dir| {
+                let new_pos = dir.next(self.current_possition)?;
+                Some(Self {
+                    current_direction: dir,
+                    current_possition: new_pos,
+                })
+            })
+            .collect()
+        })
     }
 }
 
-#[derive(Clone)]
 struct Board {
     light: Vec<Light>,
     board: Vec<Vec<char>>,
@@ -75,6 +79,15 @@ struct Board {
 }
 
 impl Board {
+    fn reset_with(&mut self, light: Light) {
+        self.seen_directions
+            .iter_mut()
+            .for_each(|row| row.iter_mut().for_each(Vec::clear));
+        self.light.clear();
+        self.seen_directions[light.current_possition.1][light.current_possition.0]
+            .push(light.current_direction.clone());
+        self.light.push(light);
+    }
     fn edges(&self) -> Vec<(usize, usize)> {
         let x_edge = self.board[0].len() - 1;
         let y_edge = self.board.len() - 1;
@@ -83,31 +96,28 @@ impl Board {
             .filter(|&(x, y)| x == 0 || x == x_edge || y == 0 || y == y_edge)
             .collect()
     }
-    fn start_at(&self, pos: (usize, usize)) -> Vec<Self> {
+    fn start_at(&self, pos: (usize, usize)) -> Vec<Light> {
         let y_edge = self.board.len() - 1;
         let x_edge = self.board[0].len() - 1;
         let dirs = match pos {
-            (0, 0) => vec![Direction::Down, Direction::Right], // Top left
-            (0, y) if y == y_edge => vec![Direction::Up, Direction::Right], // Top right
-            (x, 0) if x == x_edge => vec![Direction::Down, Direction::Left], // bottom left
-            (x, y) if y == y_edge && x == x_edge => vec![Direction::Up, Direction::Left], // bottomright
-            (0, _) => vec![Direction::Right], // left side
-            (x, _) if x == x_edge => vec![Direction::Left], // right side
-            (_, 0) => vec![Direction::Down],  // top
-            (_, y) if y == y_edge => vec![Direction::Up], // bottom
-            _ => unreachable!(),              // NO
+            (0, 0) => [Some(Direction::Down), Some(Direction::Right)], // Top left
+            (0, y) if y == y_edge => [Some(Direction::Up), Some(Direction::Right)], // Top right
+            (x, 0) if x == x_edge => [Some(Direction::Down), Some(Direction::Left)], // bottom left
+            (x, y) if y == y_edge && x == x_edge => [Some(Direction::Up), Some(Direction::Left)], // bottomright
+            (0, _) => [Some(Direction::Right), None], // left side
+            (x, _) if x == x_edge => [Some(Direction::Left), None], // right side
+            (_, 0) => [Some(Direction::Down), None],  // top
+            (_, y) if y == y_edge => [Some(Direction::Up), None], // bottom
+            _ => unreachable!(),                      // NO
         };
-        let mut boards = vec![];
-        for dir in dirs {
-            let mut new_board = self.clone();
-            new_board.light.push(Light {
+        let mut lights = vec![];
+        for dir in dirs.into_iter().flatten() {
+            lights.push(Light {
                 current_possition: pos,
-                current_direction: dir.clone(),
+                current_direction: dir,
             });
-            new_board.seen_directions[pos.1][pos.0].push(dir);
-            boards.push(new_board);
         }
-        boards
+        lights
     }
     fn step(&mut self) -> bool {
         let mut all_new_light = vec![];
@@ -194,10 +204,11 @@ impl Display for Board {
 }
 
 fn main() {
-    let board: Board = aoc_2023::include_data!(day16).into();
+    let mut board: Board = aoc_2023::include_data!(day16).into();
     let mut energized = 0;
-    for corner in board.edges() {
-        for mut board in board.start_at(corner) {
+    for pos in board.edges() {
+        for light in board.start_at(pos) {
+            board.reset_with(light);
             while board.step() {}
             energized = energized.max(
                 board
