@@ -74,31 +74,30 @@ impl Light {
 
 struct Board {
     light: Vec<Light>,
-    board: Vec<Vec<char>>,
-    seen_directions: Vec<Vec<Vec<Direction>>>,
+    board: aoc_2023::TwoDArray<char>,
+    seen_directions: aoc_2023::TwoDArray<Vec<Direction>>,
 }
 
 impl Board {
     fn reset_with(&mut self, light: Light) {
         self.seen_directions
-            .iter_mut()
+            .rows_mut()
             .for_each(|row| row.iter_mut().for_each(Vec::clear));
         self.light.clear();
-        self.seen_directions[light.current_possition.1][light.current_possition.0]
-            .push(light.current_direction.clone());
+        self.seen_directions[light.current_possition].push(light.current_direction.clone());
         self.light.push(light);
     }
     fn edges(&self) -> Vec<(usize, usize)> {
-        let x_edge = self.board[0].len() - 1;
-        let y_edge = self.board.len() - 1;
-        (0..self.board.len())
+        let x_edge = self.board.x_len() - 1;
+        let y_edge = self.board.y_len() - 1;
+        (0..self.board.x_len())
             .flat_map(|y| (0..self.board[0].len()).map(move |x| (x, y)))
             .filter(|&(x, y)| x == 0 || x == x_edge || y == 0 || y == y_edge)
             .collect()
     }
     fn start_at(&self, pos: (usize, usize)) -> Vec<Light> {
-        let y_edge = self.board.len() - 1;
-        let x_edge = self.board[0].len() - 1;
+        let y_edge = self.board.y_len() - 1;
+        let x_edge = self.board.x_len() - 1;
         let dirs = match pos {
             (0, 0) => [Some(Direction::Down), Some(Direction::Right)], // Top left
             (0, y) if y == y_edge => [Some(Direction::Up), Some(Direction::Right)], // Top right
@@ -123,25 +122,18 @@ impl Board {
         let mut all_new_light = vec![];
         let mut new_light = false;
         for light in &self.light {
-            let next_lights = light.next_step(Some(
-                self.board[light.current_possition.1][light.current_possition.0],
-            ));
+            let next_lights = light.next_step(Some(self.board[light.current_possition]));
             for next_light in next_lights {
-                if next_light.current_possition.1 >= self.board.len() {
+                if !self.board.is_within_bounds(next_light.current_possition) {
                     continue;
                 }
-                if next_light.current_possition.0 >= self.board[0].len() {
-                    continue;
-                }
-                if self.seen_directions[next_light.current_possition.1]
-                    [next_light.current_possition.0]
+                if self.seen_directions[next_light.current_possition]
                     .contains(&next_light.current_direction)
                 {
                     continue;
                 }
                 new_light = true;
-                self.seen_directions[next_light.current_possition.1]
-                    [next_light.current_possition.0]
+                self.seen_directions[next_light.current_possition]
                     .push(next_light.current_direction.clone());
                 all_new_light.push(next_light);
             }
@@ -153,7 +145,7 @@ impl Board {
     fn print_energized(&self) {
         let mut board = self.board.clone();
 
-        for (line, seen) in board.iter_mut().zip(&self.seen_directions) {
+        for (line, seen) in board.rows_mut().zip(&self.seen_directions.elems) {
             for (elem, dirs) in line.iter_mut().zip(seen) {
                 if dirs.is_empty() {
                     *elem = '.';
@@ -162,14 +154,14 @@ impl Board {
                 }
             }
         }
-        let lines: Vec<_> = board.iter().map(|l| l.iter().collect::<String>()).collect();
+        let lines: Vec<_> = board.rows().map(|l| l.iter().collect::<String>()).collect();
         println!("{}", lines.join("\n"));
     }
 }
 
 impl From<&str> for Board {
     fn from(value: &str) -> Self {
-        let seen_directions: Vec<Vec<_>> = value
+        let seen_directions = value
             .lines()
             .map(|l| l.chars().map(|_| vec![]).collect())
             .collect();
@@ -185,20 +177,16 @@ impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut lines = self.board.clone();
         for light in &self.light {
-            if matches!(
-                lines[light.current_possition.1][light.current_possition.0],
-                '.'
-            ) {
-                lines[light.current_possition.1][light.current_possition.0] =
-                    match light.current_direction {
-                        Direction::Up => '^',
-                        Direction::Down => 'V',
-                        Direction::Left => '<',
-                        Direction::Right => '>',
-                    }
+            if matches!(lines[light.current_possition], '.') {
+                lines[light.current_possition] = match light.current_direction {
+                    Direction::Up => '^',
+                    Direction::Down => 'V',
+                    Direction::Left => '<',
+                    Direction::Right => '>',
+                }
             }
         }
-        let lines: Vec<_> = lines.iter().map(|l| l.iter().collect::<String>()).collect();
+        let lines: Vec<_> = lines.rows().map(|l| l.iter().collect::<String>()).collect();
         f.write_str(lines.join("\n").as_str())
     }
 }
@@ -213,8 +201,7 @@ fn main() {
             energized = energized.max(
                 board
                     .seen_directions
-                    .iter()
-                    .flatten()
+                    .elems()
                     .filter(|l| !l.is_empty())
                     .count(),
             );
