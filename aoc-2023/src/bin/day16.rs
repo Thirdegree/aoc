@@ -72,7 +72,7 @@ impl Light {
     }
 }
 
-#[derive(aoc_helpers::TwoDArray)]
+#[derive(aoc_macros::TwoDArray)]
 struct Board {
     light: Vec<Light>,
     elems: Vec<Vec<char>>,
