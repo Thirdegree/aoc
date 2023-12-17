@@ -76,7 +76,7 @@ impl Light {
 struct Board {
     light: Vec<Light>,
     elems: Vec<Vec<char>>,
-    seen_directions: aoc_2023::TwoDArray<Vec<Direction>>,
+    seen_directions: aoc_helpers::TwoDArray<Vec<Direction>>,
 }
 
 impl Board {
@@ -197,7 +197,7 @@ impl Display for Board {
 }
 
 fn main() {
-    let mut board: Board = aoc_2023::include_data!(day16).into();
+    let mut board: Board = aoc_helpers::include_data!(day16).into();
     let mut energized = 0;
     for pos in board.edges() {
         for light in board.start_at(pos) {

@@ -39,7 +39,7 @@ impl Card {
 }
 
 fn main() -> anyhow::Result<()> {
-    let cards: Vec<Card> = aoc_2023::include_data!(day4)
+    let cards: Vec<Card> = aoc_helpers::include_data!(day4)
         .lines()
         .map(TryInto::try_into)
         .collect::<Result<_, _>>()?;
@@ -55,7 +55,7 @@ fn main() -> anyhow::Result<()> {
 
 #[allow(dead_code)]
 fn part1() -> anyhow::Result<()> {
-    let cards: Vec<Card> = aoc_2023::include_data!(day4)
+    let cards: Vec<Card> = aoc_helpers::include_data!(day4)
         .lines()
         .map(TryInto::try_into)
         .collect::<Result<_, _>>()?;

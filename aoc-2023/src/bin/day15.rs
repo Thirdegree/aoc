@@ -42,7 +42,7 @@ fn hasher(value: &str) -> usize {
 }
 
 fn main() {
-    let lenses: Vec<Lense> = aoc_2023::include_data!(day15)
+    let lenses: Vec<Lense> = aoc_helpers::include_data!(day15)
         .trim()
         .split(',')
         .map(Into::into)

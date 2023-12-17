@@ -41,7 +41,7 @@ impl FromStr for Game {
 }
 
 fn main() {
-    let result: u32 = aoc_2023::include_data!(day2)
+    let result: u32 = aoc_helpers::include_data!(day2)
         .lines()
         .filter_map(|line| line.parse().ok())
         .map(|game: Game| game.max_green * game.max_blue * game.max_red)
@@ -51,7 +51,7 @@ fn main() {
 
 #[allow(dead_code)]
 fn part1() {
-    let result = aoc_2023::include_data!(day2)
+    let result = aoc_helpers::include_data!(day2)
         .lines()
         .filter_map(|line| line.parse().ok())
         .filter_map(|game: Game| {

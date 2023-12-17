@@ -170,7 +170,7 @@ impl Mapping {
 }
 
 fn main() {
-    let mut data = aoc_2023::include_data!(day5).split("\n\n");
+    let mut data = aoc_helpers::include_data!(day5).split("\n\n");
     let seeds: Vec<u64> = data
         .next()
         .unwrap()
@@ -197,7 +197,7 @@ fn main() {
 fn part1() {
     // ok this is not actually how I initally wrote part 1, but I deleted that and now am comping
     // back and re-implementing it
-    let mut data = aoc_2023::include_data!(day5).split("\n\n");
+    let mut data = aoc_helpers::include_data!(day5).split("\n\n");
     let seeds: Vec<u64> = data
         .next()
         .unwrap()

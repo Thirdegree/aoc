@@ -190,7 +190,7 @@ fn pprint_rowvec(elems: &[Space]) {
 }
 
 fn main() -> anyhow::Result<()> {
-    let rows: Vec<Row> = aoc_2023::include_data!(day12)
+    let rows: Vec<Row> = aoc_helpers::include_data!(day12)
         .lines()
         .map(TryInto::try_into)
         .collect::<anyhow::Result<_, _>>()?;

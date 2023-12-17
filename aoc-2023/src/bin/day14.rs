@@ -193,7 +193,7 @@ impl Board {
 }
 
 fn main() {
-    let mut board: Board = aoc_2023::include_data!(day14).into();
+    let mut board: Board = aoc_helpers::include_data!(day14).into();
     // guessing that total number of enountered boardstates is < 2000, purely for performance
     // benefits
     let mut known_boardstates = HashSet::with_capacity(1_000);

@@ -33,7 +33,7 @@ fn find_next(pattern: Vec<i32>) -> i32 {
 }
 
 fn main() {
-    let result: i32 = aoc_2023::include_data!(day9)
+    let result: i32 = aoc_helpers::include_data!(day9)
         .lines()
         .map(|line| {
             line.split_whitespace()

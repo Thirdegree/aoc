@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 use anyhow::Context;
 fn main() -> anyhow::Result<()> {
-    let mut inp = aoc_2023::include_data!(day6).lines();
+    let mut inp = aoc_helpers::include_data!(day6).lines();
     let time: u64 = inp
         .next()
         .context("Bad input")?
@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
 }
 #[allow(dead_code)]
 fn part1() -> anyhow::Result<()> {
-    let mut inp = aoc_2023::include_data!(day6).lines();
+    let mut inp = aoc_helpers::include_data!(day6).lines();
     let time: Vec<u64> = inp
         .next()
         .context("Bad input")?

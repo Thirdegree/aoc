@@ -236,7 +236,7 @@ impl Grid {
 }
 
 fn main() -> anyhow::Result<()> {
-    let grid: Grid = aoc_2023::include_data!(day10).try_into()?;
+    let grid: Grid = aoc_helpers::include_data!(day10).try_into()?;
     // grid.pprint();
     println!("Day 10 result: {}", grid.enclosed_coords().len());
     Ok(())

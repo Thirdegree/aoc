@@ -113,7 +113,7 @@ impl Schematic {
 }
 
 fn main() {
-    let board: Schematic = aoc_2023::include_data!(day3).into();
+    let board: Schematic = aoc_helpers::include_data!(day3).into();
     let parts = board.find_parts();
     let gear_pairs = Schematic::gear_pairs(&parts);
     println!(

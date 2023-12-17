@@ -123,7 +123,7 @@ impl Universe {
 }
 
 fn main() {
-    let mut universe: Universe = aoc_2023::include_data!(day11).into();
+    let mut universe: Universe = aoc_helpers::include_data!(day11).into();
     // universe.expand(10); // part 1
     // Do not have to do it this way, only doing it to show I can!
     // 1,000 * 2 * 5 * 20 * 5 == 1,000,000

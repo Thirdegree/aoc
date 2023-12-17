@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 
 fn main() {
-    let mut data = aoc_2023::include_data!(day8).lines();
+    let mut data = aoc_helpers::include_data!(day8).lines();
     let instr = data.next().unwrap();
     data.next().unwrap();
 
@@ -53,7 +53,7 @@ fn main() {
             // math is fun!
             // (also the problems must be constructed so this works,
             // it's not hard to construct a counter example)
-            .reduce(aoc_2023::math::lcm)
+            .reduce(aoc_helpers::math::lcm)
             .unwrap()
     );
 }

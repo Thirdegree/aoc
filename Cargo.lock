@@ -31,12 +31,19 @@ name = "aoc-2023"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aoc-helpers",
  "aoc-macros",
  "cached",
- "hashbrown 0.14.3",
  "itertools",
- "priority-queue",
  "threadpool",
+]
+
+[[package]]
+name = "aoc-helpers"
+version = "0.1.0"
+dependencies = [
+ "hashbrown 0.14.3",
+ "priority-queue",
 ]
 
 [[package]]

@@ -104,7 +104,7 @@ impl Display for Pattern {
 }
 
 fn main() {
-    let patterns: Vec<Pattern> = aoc_2023::include_data!(day13)
+    let patterns: Vec<Pattern> = aoc_helpers::include_data!(day13)
         .split("\n\n")
         .map(Into::into)
         .collect();

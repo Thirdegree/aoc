@@ -95,7 +95,7 @@ where
 }
 
 fn main() {
-    let map: Vec<Vec<_>> = aoc_2023::include_data!(day17)
+    let map: Vec<Vec<_>> = aoc_helpers::include_data!(day17)
         .lines()
         .map(|line| {
             line.chars()
@@ -104,7 +104,7 @@ fn main() {
         })
         .collect();
     let dest = (map[0].len() - 1, map.len() - 1);
-    let (_path, result) = aoc_2023::math::astar(
+    let (_path, result) = aoc_helpers::math::astar(
         &((0, 0), None, 0),
         nexts,
         |elem| elem.0 == dest,
