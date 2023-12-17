@@ -72,9 +72,10 @@ impl Light {
     }
 }
 
+#[derive(aoc_helpers::TwoDArray)]
 struct Board {
     light: Vec<Light>,
-    board: aoc_2023::TwoDArray<char>,
+    elems: Vec<Vec<char>>,
     seen_directions: aoc_2023::TwoDArray<Vec<Direction>>,
 }
 
@@ -88,16 +89,16 @@ impl Board {
         self.light.push(light);
     }
     fn edges(&self) -> Vec<(usize, usize)> {
-        let x_edge = self.board.x_len() - 1;
-        let y_edge = self.board.y_len() - 1;
-        (0..self.board.x_len())
-            .flat_map(|y| (0..self.board[0].len()).map(move |x| (x, y)))
+        let x_edge = self.x_len() - 1;
+        let y_edge = self.y_len() - 1;
+        (0..self.x_len())
+            .flat_map(|y| (0..self[0].len()).map(move |x| (x, y)))
             .filter(|&(x, y)| x == 0 || x == x_edge || y == 0 || y == y_edge)
             .collect()
     }
     fn start_at(&self, pos: (usize, usize)) -> Vec<Light> {
-        let y_edge = self.board.y_len() - 1;
-        let x_edge = self.board.x_len() - 1;
+        let y_edge = self.y_len() - 1;
+        let x_edge = self.x_len() - 1;
         let dirs = match pos {
             (0, 0) => [Some(Direction::Down), Some(Direction::Right)], // Top left
             (0, y) if y == y_edge => [Some(Direction::Up), Some(Direction::Right)], // Top right
@@ -122,9 +123,9 @@ impl Board {
         let mut all_new_light = vec![];
         let mut new_light = false;
         for light in &self.light {
-            let next_lights = light.next_step(Some(self.board[light.current_possition]));
+            let next_lights = light.next_step(Some(self[light.current_possition]));
             for next_light in next_lights {
-                if !self.board.is_within_bounds(next_light.current_possition) {
+                if !self.is_within_bounds(next_light.current_possition) {
                     continue;
                 }
                 if self.seen_directions[next_light.current_possition]
@@ -143,9 +144,9 @@ impl Board {
     }
     #[allow(dead_code)]
     fn print_energized(&self) {
-        let mut board = self.board.clone();
+        let mut board = self.elems.clone();
 
-        for (line, seen) in board.rows_mut().zip(&self.seen_directions.elems) {
+        for (line, seen) in board.iter_mut().zip(&self.seen_directions.elems) {
             for (elem, dirs) in line.iter_mut().zip(seen) {
                 if dirs.is_empty() {
                     *elem = '.';
@@ -154,7 +155,7 @@ impl Board {
                 }
             }
         }
-        let lines: Vec<_> = board.rows().map(|l| l.iter().collect::<String>()).collect();
+        let lines: Vec<_> = board.iter().map(|l| l.iter().collect::<String>()).collect();
         println!("{}", lines.join("\n"));
     }
 }
@@ -167,7 +168,7 @@ impl From<&str> for Board {
             .collect();
         Self {
             light: vec![],
-            board: value.lines().map(|l| l.chars().collect()).collect(),
+            elems: value.lines().map(|l| l.chars().collect()).collect(),
             seen_directions,
         }
     }
@@ -175,18 +176,22 @@ impl From<&str> for Board {
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut lines = self.board.clone();
+        let mut lines = self.elems.clone();
         for light in &self.light {
-            if matches!(lines[light.current_possition], '.') {
-                lines[light.current_possition] = match light.current_direction {
-                    Direction::Up => '^',
-                    Direction::Down => 'V',
-                    Direction::Left => '<',
-                    Direction::Right => '>',
-                }
+            if matches!(
+                lines[light.current_possition.1][light.current_possition.0],
+                '.'
+            ) {
+                lines[light.current_possition.1][light.current_possition.0] =
+                    match light.current_direction {
+                        Direction::Up => '^',
+                        Direction::Down => 'V',
+                        Direction::Left => '<',
+                        Direction::Right => '>',
+                    }
             }
         }
-        let lines: Vec<_> = lines.rows().map(|l| l.iter().collect::<String>()).collect();
+        let lines: Vec<_> = lines.iter().map(|l| l.iter().collect::<String>()).collect();
         f.write_str(lines.join("\n").as_str())
     }
 }
