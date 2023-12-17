@@ -6,3 +6,4 @@ members = [
     "aoc-macros",
     "aoc-helpers",
 ]
+default-members = ["aoc-2023"]
