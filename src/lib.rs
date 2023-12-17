@@ -108,6 +108,25 @@ pub mod math {
     {
         astar(start, edge_gen, is_goal, weight, |_| 0)
     }
+
+    struct SearchState<T>
+    where
+        T: std::hash::Hash + Eq,
+    {
+        to_visit: PriorityQueue<T, i32>,
+        came_from: HashMap<T, T>,
+        g_score: HashMap<T, i32>,
+    }
+    impl<T: std::hash::Hash + Eq> SearchState<T> {
+        fn new() -> Self {
+            Self {
+                to_visit: PriorityQueue::new(),
+                came_from: HashMap::new(),
+                g_score: HashMap::new(),
+            }
+        }
+    }
+
     pub fn astar<T, A, G, W, W2, Fe>(
         start: &T,
         edge_gen: Fe,
@@ -125,38 +144,48 @@ pub mod math {
         G: Fn(&T) -> bool,
         Fe: for<'a> Fn(&'a W, &'a T) -> Vec<(i32, T)>,
     {
-        let mut to_visit = PriorityQueue::new();
-        to_visit.push(start.clone(), 0);
-        let mut camefrom: HashMap<T, T> = HashMap::new();
-        let mut g_score: HashMap<T, i32> = HashMap::new();
-        g_score.insert(start.clone(), 0);
+        let mut search_state = SearchState::new();
+        search_state.to_visit.push(start.clone(), 0);
+        search_state.g_score.insert(start.clone(), 0);
 
-        while let Some((current, fscore)) = to_visit.pop() {
+        while let Some((current, fscore)) = search_state.to_visit.pop() {
             if is_goal(&current) {
                 let mut current = current;
                 let mut path = vec![current.clone()];
-                while let Some(came) = camefrom.get(&current) {
+                while let Some(came) = search_state.came_from.get(&current) {
                     let came = came.clone();
                     path.push(came.clone());
                     current = came;
                 }
                 return (path.into_iter().rev().collect(), -fscore);
             }
-            to_visit.remove(&current);
+            search_state.to_visit.remove(&current);
             for (weight, neighbor) in edge_gen(&weight, &current) {
-                let tentative_gscore = g_score[&current] + weight;
-                if let Some(&old_score) = g_score.get(&neighbor) {
+                let tentative_gscore = search_state.g_score[&current] + weight;
+                if let Some(&old_score) = search_state.g_score.get(&neighbor) {
                     if tentative_gscore < old_score {
-                        camefrom.insert(neighbor.clone(), current.clone());
+                        search_state
+                            .came_from
+                            .insert(neighbor.clone(), current.clone());
                         let h = heuristic(&neighbor);
-                        to_visit.push(neighbor.clone(), -(tentative_gscore + h));
-                        g_score.insert(neighbor.clone(), tentative_gscore);
+                        search_state
+                            .to_visit
+                            .push(neighbor.clone(), -(tentative_gscore + h));
+                        search_state
+                            .g_score
+                            .insert(neighbor.clone(), tentative_gscore);
                     }
                 } else {
                     let h = heuristic(&neighbor);
-                    g_score.insert(neighbor.clone(), tentative_gscore);
-                    camefrom.insert(neighbor.clone(), current.clone());
-                    to_visit.push(neighbor.clone(), -(tentative_gscore + h));
+                    search_state
+                        .g_score
+                        .insert(neighbor.clone(), tentative_gscore);
+                    search_state
+                        .came_from
+                        .insert(neighbor.clone(), current.clone());
+                    search_state
+                        .to_visit
+                        .push(neighbor.clone(), -(tentative_gscore + h));
                 }
             }
         }
