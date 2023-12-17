@@ -2,68 +2,103 @@
 
 use std::collections::{HashMap, HashSet};
 
+use priority_queue::PriorityQueue;
+
 #[derive(PartialEq, Hash, Eq, Debug, Copy, Clone)]
 struct Node {
     cost: u32,
     pos: (usize, usize),
 }
+fn dijkstra<'a, T, G, W2>(
+    adj_list: &'a HashMap<T, Vec<T>>,
+    start: &'a T,
+    is_goal: G,
+    weight: W2,
+) -> Vec<&'a T>
+where
+    T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
+    W2: Fn(&T) -> u32,
+    G: Fn(&T) -> bool,
+{
+    let mut to_visit = priority_queue::PriorityQueue::new();
+    to_visit.push(start, 0);
 
-fn astar<T, G, W, W2>(
-    adj_list: &HashMap<T, Vec<T>>,
-    start: &T,
+    let mut distances = HashMap::new();
+    let mut prev: HashMap<&T, Option<&T>> = HashMap::new();
+    for k in adj_list.keys() {
+        distances.insert(k, u32::MAX);
+    }
+    for k in adj_list.keys() {
+        prev.insert(k, None);
+    }
+    distances.insert(start, 0);
+    while !to_visit.is_empty() {
+        let (mut current, _) = to_visit.pop().unwrap();
+        if is_goal(current) {
+            let mut path = vec![current];
+            while let Some(Some(next)) = prev.get(current) {
+                path.push(next);
+                current = next;
+            }
+            return path;
+        }
+        for neighbor in &adj_list[current] {
+            let tentative_dist = distances[current] + weight(neighbor);
+            if tentative_dist < distances[neighbor] {
+                to_visit.push(neighbor, -(tentative_dist as i32));
+                distances.insert(neighbor, tentative_dist);
+                prev.insert(neighbor, Some(current));
+            }
+        }
+    }
+    unreachable!()
+}
+
+fn astar<'a, T, G, W, W2>(
+    adj_list: &'a HashMap<T, Vec<T>>,
+    start: &'a T,
     is_goal: G,
     heuristic: W,
     weight: W2,
-) -> Vec<T>
+) -> Vec<&'a T>
 where
     T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
     W: Fn(&T) -> u32,
     W2: Fn(&T) -> u32,
     G: Fn(&T) -> bool,
 {
-    let mut to_visit = HashSet::new();
-    to_visit.insert(start.clone());
-    let mut camefrom: HashMap<T, T> = HashMap::new();
-    let mut g_score: HashMap<T, u32> = HashMap::new();
-    g_score.insert(start.clone(), 0);
-    let mut f_score: HashMap<T, u32> = HashMap::new();
-    f_score.insert(start.clone(), heuristic(start));
+    let mut to_visit = PriorityQueue::new();
+    to_visit.push(start, 0);
+    let mut camefrom: HashMap<&T, &T> = HashMap::new();
+    let mut g_score: HashMap<&T, u32> = HashMap::new();
+    g_score.insert(start, 0);
 
-    let mut i = 0;
     while !to_visit.is_empty() {
-        i += 1;
-        if i % 200 == 0 {
-            println!("n to visit? {}", to_visit.len());
-        }
-        let current = to_visit
-            .iter()
-            .min_by_key(|elem| *f_score.get(elem).unwrap_or(&u32::MAX))
-            .unwrap()
-            .clone();
-        if is_goal(&current) {
+        let (current, _) = to_visit.pop().unwrap();
+        if is_goal(current) {
             let mut current = current;
-            let mut path = vec![current.clone()];
+            let mut path = vec![current];
             while let Some(came) = camefrom.get(&current) {
-                path.push(came.clone());
-                current = came.clone();
+                path.push(came);
+                current = came;
             }
-            return path.iter().rev().cloned().collect();
+            return path.into_iter().rev().collect();
         }
         to_visit.remove(&current);
-        for neighbor in &adj_list[&current] {
+        for neighbor in &adj_list[current] {
             let tentative_gscore = g_score[&current] + weight(neighbor);
             if let Some(&old_score) = g_score.get(neighbor) {
                 if tentative_gscore < old_score {
-                    camefrom.insert(neighbor.clone(), current.clone());
-                    to_visit.insert(neighbor.clone());
-                    g_score.insert(neighbor.clone(), tentative_gscore);
-                    f_score.insert(neighbor.clone(), tentative_gscore + heuristic(neighbor));
+                    camefrom.insert(neighbor, current);
+                    let h = heuristic(neighbor);
+                    to_visit.push(neighbor, -(tentative_gscore as i32 + h as i32));
+                    g_score.insert(neighbor, tentative_gscore);
                 }
             } else {
-                g_score.insert(neighbor.clone(), tentative_gscore);
-                f_score.insert(neighbor.clone(), tentative_gscore + heuristic(neighbor));
-                camefrom.insert(neighbor.clone(), current.clone());
-                to_visit.insert(neighbor.clone());
+                let h = heuristic(neighbor);
+                g_score.insert(neighbor, tentative_gscore);
+                camefrom.insert(neighbor, current);
+                to_visit.push(neighbor, -(tentative_gscore as i32 + h as i32));
             }
         }
     }
@@ -143,22 +178,27 @@ fn main() {
             for dest2 in &adj_list3[&dest] {
                 // imagine source = (a, b, c); dest = (b, c, d); dest2 = (c, d, e)
                 // We are constructing new_source = (a, b, c, d); new_dest = (b, c, d, e)
+                let a = source.0;
+                let b = dest.0;
+                let c = dest2.0;
+                let d = dest2.1;
+                let e = dest2.2;
                 let new_source: (Option<Node>, Option<Node>, Option<Node>, Option<Node>) =
-                    (Some(source.0), Some(dest.0), Some(dest2.0), Some(dest2.1));
+                    (Some(a), Some(b), Some(c), Some(d));
                 let new_dest: (Option<Node>, Option<Node>, Option<Node>, Option<Node>) =
-                    (Some(source.1), Some(dest.1), Some(dest2.1), Some(dest2.2));
-                if source.0.pos.0 == dest.0.pos.0
-                    && dest.0.pos.0 == dest2.0.pos.0
-                    && dest2.0.pos.0 == dest2.1.pos.0
-                    && dest2.1.pos.0 == dest2.2.pos.0
+                    (Some(b), Some(c), Some(d), Some(e));
+                if a.pos.0 == b.pos.0
+                    && b.pos.0 == c.pos.0
+                    && c.pos.0 == d.pos.0
+                    && d.pos.0 == e.pos.0
                 {
                     // invalid horizontally
                     continue;
                 }
-                if source.0.pos.1 == dest.0.pos.1
-                    && dest.0.pos.1 == dest2.0.pos.1
-                    && dest2.0.pos.1 == dest2.1.pos.1
-                    && dest2.1.pos.1 == dest2.2.pos.1
+                if a.pos.1 == b.pos.1
+                    && b.pos.1 == c.pos.1
+                    && c.pos.1 == d.pos.1
+                    && d.pos.1 == e.pos.1
                 {
                     // invalid vertically
                     continue;
@@ -195,35 +235,18 @@ fn main() {
         .copied()
         .collect();
     for (a, b, c, d) in keys_with_start {
-        println!("foo {a:?}, {b:?}, {c:?}, {d:?}");
         adj_list4
             .entry((None, a, b, c))
             .or_default()
             .push((a, b, c, d));
-    }
-    let keys_with_start: Vec<_> = adj_list4
-        .keys()
-        .filter(|(a, b, _, _)| (a, b) == (&None, &Some(start_node)))
-        .copied()
-        .collect();
-    for (a, b, c, d) in keys_with_start {
-        println!("{a:?}, {b:?}, {c:?}, {d:?}");
         adj_list4
-            .entry((None, a, b, c))
+            .entry((None, None, a, b))
             .or_default()
-            .push((a, b, c, d));
-    }
-    let keys_with_start: Vec<_> = adj_list4
-        .keys()
-        .filter(|(a, b, c, _)| (a, b, c) == (&None, &None, &Some(start_node)))
-        .copied()
-        .collect();
-    for (a, b, c, d) in keys_with_start {
-        println!("ccccc");
+            .push((None, a, b, c));
         adj_list4
-            .entry((None, a, b, c))
+            .entry((None, None, None, a))
             .or_default()
-            .push((a, b, c, d));
+            .push((None, None, a, b));
     }
     let start_node: (Option<Node>, Option<Node>, Option<Node>, Option<Node>) =
         (None, None, None, Some(start_node));
@@ -238,14 +261,10 @@ fn main() {
                 false
             }
         },
-        |(_, _, _, c)| {
-            let pos = c.unwrap().pos;
-            (pos.0.abs_diff(dest.0) + pos.1.abs_diff(dest.1)) as u32
-        },
+        |(_, _, _, c)| {let c = c.unwrap(); (c.pos.0.abs_diff(dest.0) + c.pos.1.abs_diff(dest.1)) as u32},
         |(_, _, _, c)| c.unwrap().cost,
     );
     let path: Vec<_> = path.iter().map(|(_, _, _, c)| c.unwrap()).collect();
-    println!("{path:?}");
     for elem in &path {
         println!("{:?}", elem.pos);
     }
