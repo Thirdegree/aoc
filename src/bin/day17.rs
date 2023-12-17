@@ -1,9 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::collections::HashMap;
-
-use priority_queue::PriorityQueue;
-
 type Pos = (usize, usize);
 type State = (Pos, Option<Direction>, usize);
 
@@ -37,137 +33,84 @@ impl Direction {
     }
 }
 
-fn nexts(map: &Vec<Vec<i32>>, state: &State) -> Vec<(i32, State)> {
+fn nexts<F>(weight: &F, state: &State) -> Vec<(i32, State)>
+where
+    F: Fn(&Pos) -> Option<i32>,
+{
     let mut nexts = vec![];
-    match &state.1 {
-        // first step
-        None => {
-            for dir in [Direction::Down, Direction::Right] {
-                if let Some(pos) = dir.add(state.0, 4) {
-                    // dbg!(pos);
-                    if pos.1 >= map.len() || pos.0 >= map[0].len() {
-                        continue;
-                    }
-                    let w = match dir {
-                        Direction::Up => {
-                            map[pos.1][pos.0]
-                                + map[pos.1 + 1][pos.0]
-                                + map[pos.1 + 2][pos.0]
-                                + map[pos.1 + 3][pos.0]
-                        }
-                        Direction::Down => {
-                            map[pos.1][pos.0]
-                                + map[pos.1 - 1][pos.0]
-                                + map[pos.1 - 2][pos.0]
-                                + map[pos.1 - 3][pos.0]
-                        }
-                        Direction::Left => {
-                            map[pos.1][pos.0]
-                                + map[pos.1][pos.0 + 1]
-                                + map[pos.1][pos.0 + 2]
-                                + map[pos.1][pos.0 + 3]
-                        }
-                        Direction::Right => {
-                            map[pos.1][pos.0]
-                                + map[pos.1][pos.0 - 1]
-                                + map[pos.1][pos.0 - 2]
-                                + map[pos.1][pos.0 - 3]
-                        }
-                    };
-                    nexts.push((w, (pos, Some(dir), 4)));
-                }
-            }
-        }
-        // all other steps
-        Some(dir) => {
-            // 3 cases: After a turn, MUST go 4 spaces
-            //          >=10, must turn,
-            //          anything else, can do whatever it wants
-            if state.2 < 10 {
-                if let Some(pos) = dir.add(state.0, 1) {
-                    if !(pos.1 >= map.len() || pos.0 >= map[0].len()) {
-                        nexts.push((map[pos.1][pos.0], (pos, Some(dir.clone()), state.2 + 1)));
-                    }
-                }
-            }
-            for dir in dir.turns() {
-                if let Some(pos) = dir.add(state.0, 4) {
-                    if pos.1 >= map.len() || pos.0 >= map[0].len() {
-                        continue;
-                    }
-                    // dbg!(state.0, &dir, pos);
-                    let w = match dir {
-                        Direction::Up => {
-                            map[pos.1][pos.0]
-                                + map[pos.1 + 1][pos.0]
-                                + map[pos.1 + 2][pos.0]
-                                + map[pos.1 + 3][pos.0]
-                        }
-                        Direction::Down => {
-                            map[pos.1][pos.0]
-                                + map[pos.1 - 1][pos.0]
-                                + map[pos.1 - 2][pos.0]
-                                + map[pos.1 - 3][pos.0]
-                        }
-                        Direction::Left => {
-                            map[pos.1][pos.0]
-                                + map[pos.1][pos.0 + 1]
-                                + map[pos.1][pos.0 + 2]
-                                + map[pos.1][pos.0 + 3]
-                        }
-                        Direction::Right => {
-                            map[pos.1][pos.0]
-                                + map[pos.1][pos.0 - 1]
-                                + map[pos.1][pos.0 - 2]
-                                + map[pos.1][pos.0 - 3]
-                        }
-                    };
-                    nexts.push((w, (pos, Some(dir), 4)));
+    let next_dirs = state
+        .1
+        .as_ref()
+        .map_or_else(|| vec![Direction::Down, Direction::Right], Direction::turns);
+    if let Some(dir) = &state.1 {
+        if state.2 < 10 {
+            if let Some(pos) = dir.add(state.0, 1) {
+                let new_state = (pos, Some(dir.clone()), state.2 + 1);
+                if let Some(w) = weight(&pos) {
+                    nexts.push((w, new_state));
                 }
             }
         }
     }
+    for dir in next_dirs {
+        if let Some(pos) = dir.add(state.0, 4) {
+            // dbg!(pos);
+            // ok soooo this looks a lil groes, but doing it differently would have been
+            // worse
+            let w = || {
+                Some(match dir {
+                    Direction::Up => {
+                        weight(&pos)?
+                            + weight(&(pos.0, pos.1 + 1))?
+                            + weight(&(pos.0, pos.1 + 2))?
+                            + weight(&(pos.0, pos.1 + 3))?
+                    }
+                    Direction::Down => {
+                        weight(&pos)?
+                            + weight(&(pos.0, pos.1 - 1))?
+                            + weight(&(pos.0, pos.1 - 2))?
+                            + weight(&(pos.0, pos.1 - 3))?
+                    }
+                    Direction::Left => {
+                        weight(&pos)?
+                            + weight(&(pos.0 + 1, pos.1))?
+                            + weight(&(pos.0 + 2, pos.1))?
+                            + weight(&(pos.0 + 3, pos.1))?
+                    }
+                    Direction::Right => {
+                        weight(&pos)?
+                            + weight(&(pos.0 - 1, pos.1))?
+                            + weight(&(pos.0 - 2, pos.1))?
+                            + weight(&(pos.0 - 3, pos.1))?
+                    }
+                })
+            };
+            if let Some(w) = w() {
+                nexts.push((w, (pos, Some(dir), 4)));
+            }
+        }
+    }
+
     nexts
 }
 
-fn astar(map: &Vec<Vec<i32>>, state: State, end: &Pos) -> (Vec<Pos>, i32) {
-    let mut pqueue = PriorityQueue::new();
-    pqueue.push(state.clone(), 0);
-    let mut dists = HashMap::new();
-    dists.insert(state, 0);
-    let mut points_to: HashMap<State, State> = HashMap::new();
-    while let Some(((pos, dir, steps), dist)) = pqueue.pop() {
-        if &pos == end {
-            let mut state = (pos, dir, steps);
-            let mut path = vec![state.0];
-            while let Some(new_state) = points_to.get(&state) {
-                path.push(new_state.0);
-                state = new_state.clone();
-            }
-            return (path.into_iter().rev().collect(), -dist);
-        }
-        for (cost, state) in nexts(map, &(pos, dir.clone(), steps)) {
-            if -dist + cost < *dists.get(&state).unwrap_or(&i32::MAX) {
-                points_to.insert(state.clone(), (pos, dir.clone(), steps));
-                dists.insert(state.clone(), -dist + cost);
-                pqueue.push(state, -(-dist + cost));
-            }
-        }
-    }
-    unreachable!()
-}
-
-#[allow(clippy::too_many_lines)]
 fn main() {
     let map: Vec<Vec<_>> = aoc_2023::include_data!(day17)
         .lines()
         .map(|line| {
             line.chars()
-                .map(|c| c.to_digit(10).unwrap() as i32)
+                .map(|c| i32::try_from(c.to_digit(10).unwrap()).unwrap())
                 .collect()
         })
         .collect();
-    let (_path, result) = astar(&map, ((0, 0), None, 0), &(map[0].len() - 1, map.len() - 1));
+    let dest = (map[0].len() - 1, map.len() - 1);
+    let (_path, result) = aoc_2023::math::astar(
+        &((0, 0), None, 0),
+        nexts,
+        |elem| elem.0 == dest,
+        move |pos: &Pos| Some(*map.get(pos.1)?.get(pos.0)?),
+        |state| i32::try_from(state.0 .0.abs_diff(dest.0) + state.0 .1.abs_diff(dest.1)).unwrap(),
+    );
     // println!("{path:?}");
     println!("Day 17 result: {result}");
 }
