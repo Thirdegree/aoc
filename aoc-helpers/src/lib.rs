@@ -102,9 +102,9 @@ pub mod math {
     pub fn dijkstra<T, A, G, W, Fe>(start: &T, edge_gen: Fe, is_goal: G, weight: W) -> (Vec<T>, i32)
     where
         T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
-        W: for<'a> Fn(&'a A) -> Option<i32>,
+        W: Fn(&A) -> Option<i32>,
         G: Fn(&T) -> bool,
-        Fe: for<'a> Fn(&'a W, &'a T) -> Vec<(i32, T)>,
+        Fe: Fn(&W, &T) -> Vec<(i32, T)>,
     {
         astar(start, edge_gen, is_goal, weight, |_| 0)
     }
@@ -139,10 +139,10 @@ pub mod math {
         // But it worked with the absolute nonsense T I used in day 17
         // So I'm fairly confident in it in general
         T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
-        W: for<'a> Fn(&'a A) -> Option<i32>,
+        W: Fn(&A) -> Option<i32>,
         W2: Fn(&T) -> i32,
         G: Fn(&T) -> bool,
-        Fe: for<'a> Fn(&'a W, &'a T) -> Vec<(i32, T)>,
+        Fe: Fn(&W, &T) -> Vec<(i32, T)>,
     {
         let mut search_state = SearchState::new();
         search_state.to_visit.push(start.clone(), 0);
