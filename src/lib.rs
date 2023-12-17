@@ -77,7 +77,7 @@ macro_rules! include_data {
 
 pub mod math {
     use priority_queue::PriorityQueue;
-    use std::collections::HashMap;
+    use hashbrown::HashMap;
 
     #[must_use]
     pub fn lcm(first: u64, second: u64) -> u64 {

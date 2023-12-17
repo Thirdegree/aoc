@@ -33,6 +33,7 @@ dependencies = [
  "anyhow",
  "aoc-helpers",
  "cached",
+ "hashbrown 0.14.3",
  "itertools",
  "priority-queue",
  "threadpool",
