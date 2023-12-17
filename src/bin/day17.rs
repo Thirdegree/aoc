@@ -109,7 +109,7 @@ fn main() {
         nexts,
         |elem| elem.0 == dest,
         move |pos: &Pos| Some(*map.get(pos.1)?.get(pos.0)?),
-        |state| i32::try_from(state.0 .0.abs_diff(dest.0) + state.0 .1.abs_diff(dest.1)).unwrap(),
+        |(pos, _, _)| i32::try_from(pos.0.abs_diff(dest.0) + pos.1.abs_diff(dest.1)).unwrap(),
     );
     // println!("{path:?}");
     println!("Day 17 result: {result}");

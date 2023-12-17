@@ -116,6 +116,9 @@ pub mod math {
         heuristic: W2,
     ) -> (Vec<T>, i32)
     where
+        // Some of this could be more flexible (e.g. weight return type)
+        // But it worked with the absolute nonsense T I used in day 17
+        // So I'm fairly confident in it in general
         T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
         W: for<'a> Fn(&'a A) -> Option<i32>,
         W2: Fn(&T) -> i32,
