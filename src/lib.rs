@@ -76,6 +76,9 @@ macro_rules! include_data {
 }
 
 pub mod math {
+    use priority_queue::PriorityQueue;
+    use std::collections::HashMap;
+
     #[must_use]
     pub fn lcm(first: u64, second: u64) -> u64 {
         (first * second) / gcd(first, second)
@@ -95,5 +98,65 @@ pub mod math {
             max = min;
             min = res;
         }
+    }
+    pub fn dijkstra<T, A, G, W, Fe>(start: &T, edge_gen: Fe, is_goal: G, weight: W) -> (Vec<T>, i32)
+    where
+        T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
+        W: for<'a> Fn(&'a A) -> Option<i32>,
+        G: Fn(&T) -> bool,
+        Fe: for<'a> Fn(&'a W, &'a T) -> Vec<(i32, T)>,
+    {
+        astar(start, edge_gen, is_goal, weight, |_| 0)
+    }
+    pub fn astar<T, A, G, W, W2, Fe>(
+        start: &T,
+        edge_gen: Fe,
+        is_goal: G,
+        weight: W,
+        heuristic: W2,
+    ) -> (Vec<T>, i32)
+    where
+        T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
+        W: for<'a> Fn(&'a A) -> Option<i32>,
+        W2: Fn(&T) -> i32,
+        G: Fn(&T) -> bool,
+        Fe: for<'a> Fn(&'a W, &'a T) -> Vec<(i32, T)>,
+    {
+        let mut to_visit = PriorityQueue::new();
+        to_visit.push(start.clone(), 0);
+        let mut camefrom: HashMap<T, T> = HashMap::new();
+        let mut g_score: HashMap<T, i32> = HashMap::new();
+        g_score.insert(start.clone(), 0);
+
+        while let Some((current, fscore)) = to_visit.pop() {
+            if is_goal(&current) {
+                let mut current = current;
+                let mut path = vec![current.clone()];
+                while let Some(came) = camefrom.get(&current) {
+                    let came = came.clone();
+                    path.push(came.clone());
+                    current = came;
+                }
+                return (path.into_iter().rev().collect(), -fscore);
+            }
+            to_visit.remove(&current);
+            for (weight, neighbor) in edge_gen(&weight, &current) {
+                let tentative_gscore = g_score[&current] + weight;
+                if let Some(&old_score) = g_score.get(&neighbor) {
+                    if tentative_gscore < old_score {
+                        camefrom.insert(neighbor.clone(), current.clone());
+                        let h = heuristic(&neighbor);
+                        to_visit.push(neighbor.clone(), -(tentative_gscore + h));
+                        g_score.insert(neighbor.clone(), tentative_gscore);
+                    }
+                } else {
+                    let h = heuristic(&neighbor);
+                    g_score.insert(neighbor.clone(), tentative_gscore);
+                    camefrom.insert(neighbor.clone(), current.clone());
+                    to_visit.push(neighbor.clone(), -(tentative_gscore + h));
+                }
+            }
+        }
+        unreachable!()
     }
 }
