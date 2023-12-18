@@ -76,8 +76,8 @@ macro_rules! include_data {
 }
 
 pub mod math {
-    use priority_queue::PriorityQueue;
     use hashbrown::HashMap;
+    use priority_queue::PriorityQueue;
 
     #[must_use]
     pub fn lcm(first: u64, second: u64) -> u64 {
@@ -99,16 +99,6 @@ pub mod math {
             min = res;
         }
     }
-    pub fn dijkstra<T, A, G, W, Fe>(start: &T, edge_gen: Fe, is_goal: G, weight: W) -> (Vec<T>, i32)
-    where
-        T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
-        W: Fn(&A) -> Option<i32>,
-        G: Fn(&T) -> bool,
-        Fe: Fn(&W, &T) -> Vec<(i32, T)>,
-    {
-        astar(start, edge_gen, is_goal, weight, |_| 0)
-    }
-
     struct SearchState<T>
     where
         T: std::hash::Hash + Eq,
@@ -125,6 +115,16 @@ pub mod math {
                 g_score: HashMap::new(),
             }
         }
+    }
+
+    pub fn dijkstra<T, A, G, W, Fe>(start: &T, edge_gen: Fe, is_goal: G, weight: W) -> (Vec<T>, i32)
+    where
+        T: Eq + std::hash::Hash + Clone + std::fmt::Debug,
+        W: Fn(&A) -> Option<i32>,
+        G: Fn(&T) -> bool,
+        Fe: Fn(&W, &T) -> Vec<(i32, T)>,
+    {
+        astar(start, edge_gen, is_goal, weight, |_| 0)
     }
 
     pub fn astar<T, A, G, W, W2, Fe>(
