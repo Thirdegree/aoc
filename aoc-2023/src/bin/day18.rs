@@ -108,6 +108,7 @@ fn neighbors(pos: (usize, usize)) -> Vec<(usize, usize)> {
 }
 
 impl Path {
+    #[allow(clippy::too_many_lines)]
     fn filled_grid_area(&self) -> Vec<u64> {
         println!("n_trenches: {}", self.points.len());
         let y_incr = i32::try_from(self.min_y.abs_diff(0)).unwrap();
@@ -149,6 +150,34 @@ impl Path {
                 }
             }
         }
+        let trench_by_row = trench_by_row
+            .into_iter()
+            .map(|mut row| {
+                row.sort_by_key(|r| r.1);
+                let mut new_row = vec![];
+                let mut is_inside = false;
+                for r in row {
+                    let Some((last_dir, last_xpos, _last_is_terminus)) = new_row.last_mut() else {
+                        new_row.push(r);
+                        continue;
+                    };
+                    if last_dir != &r.0 {
+                        new_row.push(r);
+                        is_inside = !is_inside;
+                        continue;
+                    }
+                    if !is_inside {
+                        *last_xpos = r.1;
+                    }
+                    *_last_is_terminus = false;
+                }
+                new_row
+            })
+            .collect::<Vec<_>>();
+        // for r in &trench_by_row {
+        //     println!("{:?}", r);
+        // }
+        // println!();
         trench_by_row
             .into_iter()
             .enumerate()
@@ -156,62 +185,50 @@ impl Path {
                 let mut n_filled = 0;
                 let mut last_found = None;
                 let mut is_inside = false;
-                if i == 23 {
+                if i == 128 {
                     println!("{:?}", row);
                 }
-                for (dir, xpos, is_terminus) in row {
-                    if i == 23 {
-                        println!("inside? {}", is_inside);
-                    }
-                    let Some((last_dir, last_xpos, last_is_terminus)) = &last_found else {
+                for (dir, xpos, mut is_terminus) in row {
+                    let Some((last_dir, last_xpos, last_is_terminus)) = &mut last_found else {
                         last_found = Some((dir, xpos, is_terminus));
-                        is_inside = !is_inside;
+                        is_inside = true;
                         continue;
                     };
-                    if i == 23 {
+                    assert_ne!(last_dir, &dir, "fucky at i={i}");
+                    if i == 128 {
                         println!(
-                            "{:?} -> {:?}",
-                            (last_dir, last_xpos, last_is_terminus),
-                            (&dir, xpos, is_terminus)
+                            "{:?} -> {:?} is_inside? {}",
+                            (last_dir, &last_xpos, &last_is_terminus),
+                            (&dir, xpos, is_terminus),
+                            is_inside
                         );
                     }
-                    if last_dir == &dir {
-                        //  #...# -> 5
-                        //  ###.# -> 5 BUT the #.# section will be counted as 3 by the last case, so actually 2
-                        //  ..#.# -> 3
-                        assert!(is_terminus && *last_is_terminus);
-                        n_filled += xpos - last_xpos;
-                        if i == 23 {
-                            println!("a.{:?}", n_filled);
-                        }
-                        last_found = Some((dir, xpos, is_terminus));
-                        continue;
-                    }
-                    // not the same direction
-                    if is_terminus && *last_is_terminus {
-                        //  .#...#. -> 5
-                        //  .#####. -> 5
-                        //  ....... ->
-                        if is_inside {
-                            n_filled += xpos - last_xpos + 1;
-                        }
-                        if i == 23 {
-                            println!("b. {:?}", n_filled);
-                        }
-                        last_found = Some((dir, xpos, is_terminus));
-                        is_inside = !is_inside;
-                        continue;
-                    }
-                    // and at most 1 is a terminus
                     if is_inside {
-                        // #.# -> 3 , so 2 - 0 + 1
-                        n_filled += xpos - last_xpos + 1;
-                        if i == 23 {
-                            println!("c. {:?}", n_filled);
+                        if i == 128 {
+                            println!(
+                                "might {} ({} - {} - 1)",
+                                xpos - *last_xpos - 1,
+                                xpos,
+                                last_xpos
+                            );
+                        }
+                        if !(is_terminus && *last_is_terminus) {
+                            if i == 128 {
+                                println!(
+                                    "added {} ({} - {} - 1)",
+                                    xpos - *last_xpos - 1,
+                                    xpos,
+                                    last_xpos
+                                );
+                            }
+                            n_filled += (xpos - *last_xpos) - 1;
                         }
                     }
+                    last_found = Some((dir, xpos, if !is_inside { false} else {is_terminus}));
                     is_inside = !is_inside;
-                    last_found = Some((dir, xpos, is_terminus));
+                }
+                if i == 128 {
+                    println!("{}", n_filled);
                 }
                 n_filled
             })
@@ -355,9 +372,19 @@ fn main() {
         .iter()
         .map(|r| r.iter().filter(|&&c| c == '#').count() as u64)
         .collect();
+    let expected_diff_per_row: Vec<_> = path
+        .grid()
+        .iter()
+        .map(|row| row.iter().filter(|&&c| c == '#').count())
+        .collect();
     let result = path.filled_grid_area();
-    for (i, (&expected, actual)) in expected.iter().zip(result).enumerate() {
-        if expected != actual {
+    for (i, ((expected, actual), expected_diff)) in expected
+        .iter()
+        .zip(result)
+        .zip(expected_diff_per_row)
+        .enumerate()
+    {
+        if *expected != actual + expected_diff as u64 {
             println!("Diff @ {i}; expected {expected}, found {actual}");
         }
     }
