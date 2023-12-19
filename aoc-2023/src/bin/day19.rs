@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use std::{cmp::Ordering, collections::HashMap, ops::RangeInclusive};
+use std::{cmp::Ordering, collections::HashMap};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 enum RuleResult {
@@ -156,61 +156,52 @@ impl From<&str> for Workflow {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 struct ValueRanges {
-    x: RangeInclusive<usize>,
-    s: RangeInclusive<usize>,
-    m: RangeInclusive<usize>,
-    a: RangeInclusive<usize>,
+    x: (usize, usize),
+    s: (usize, usize),
+    m: (usize, usize),
+    a: (usize, usize),
+}
+
+impl Default for ValueRanges {
+    fn default() -> Self {
+        Self {
+            x: (1, 4000),
+            m: (1, 4000),
+            s: (1, 4000),
+            a: (1, 4000),
+        }
+    }
 }
 
 impl ValueRanges {
-    fn num_cases(&self) -> usize {
-        (self.x.end() - self.x.start() + 1)
-            * (self.s.end() - self.s.start() + 1)
-            * (self.m.end() - self.m.start() + 1)
-            * (self.a.end() - self.a.start() + 1)
+    const fn num_cases(&self) -> usize {
+        (self.x.1 - self.x.0 + 1)
+            * (self.s.1 - self.s.0 + 1)
+            * (self.m.1 - self.m.0 + 1)
+            * (self.a.1 - self.a.0 + 1)
     }
 
-    #[allow(clippy::range_minus_one)]
     fn split_on_restriction(&self, condition: &RuleCond) -> (Self, Self) {
         let mut matches = self.clone();
         let mut not_matches = self.clone();
-        match (condition.op, &condition.field[..]) {
-            (Ordering::Greater, "x") => {
-                matches.x = condition.val + 1..=*self.x.end();
-                not_matches.x = *self.x.start()..=condition.val;
-            }
-            (Ordering::Greater, "s") => {
-                matches.s = condition.val + 1..=*self.s.end();
-                not_matches.s = *self.s.start()..=condition.val;
-            }
-            (Ordering::Greater, "m") => {
-                matches.m = condition.val + 1..=*self.m.end();
-                not_matches.m = *self.m.start()..=condition.val;
-            }
-            (Ordering::Greater, "a") => {
-                matches.a = condition.val + 1..=*self.a.end();
-                not_matches.a = *self.a.start()..=condition.val;
-            }
-
-            (Ordering::Less, "x") => {
-                not_matches.x = condition.val..=*self.x.end();
-                matches.x = *self.x.start()..=condition.val - 1;
-            }
-            (Ordering::Less, "s") => {
-                not_matches.s = condition.val..=*self.s.end();
-                matches.s = *self.s.start()..=condition.val - 1;
-            }
-            (Ordering::Less, "m") => {
-                not_matches.m = condition.val..=*self.m.end();
-                matches.m = *self.m.start()..=condition.val - 1;
-            }
-            (Ordering::Less, "a") => {
-                not_matches.a = condition.val..=*self.a.end();
-                matches.a = *self.a.start()..=condition.val - 1;
-            }
-
-            (_, _) => unreachable!(),
+        let (field, target_matches_field, target_not_matches_field) = match &condition.field[..] {
+            "x" => (self.x, &mut matches.x, &mut not_matches.x),
+            "s" => (self.s, &mut matches.s, &mut not_matches.s),
+            "m" => (self.m, &mut matches.m, &mut not_matches.m),
+            "a" => (self.a, &mut matches.a, &mut not_matches.a),
+            _ => unreachable!(),
         };
+        match condition.op {
+            Ordering::Greater => {
+                *target_matches_field = (condition.val + 1, field.1);
+                *target_not_matches_field = (field.0, condition.val);
+            }
+            Ordering::Less => {
+                *target_matches_field = (field.0, condition.val - 1);
+                *target_not_matches_field = (condition.val, field.1);
+            }
+            Ordering::Equal => unreachable!(),
+        }
         (matches, not_matches)
     }
 }
@@ -256,22 +247,13 @@ fn main() {
         .split_once("\n\n")
         .unwrap();
 
-    let workflows = workflows
+    let workflows: HashMap<_, _> = workflows
         .lines()
         .map(Into::into)
         .map(|w: Workflow| (w.name.clone(), w))
-        .collect::<HashMap<String, _>>();
+        .collect();
     println!(
         "Day 19 result: {}",
-        solve_part_2(
-            &workflows,
-            &"in".to_string(),
-            ValueRanges {
-                x: 1..=4000,
-                m: 1..=4000,
-                s: 1..=4000,
-                a: 1..=4000,
-            }
-        )
+        solve_part_2(&workflows, &"in".to_string(), ValueRanges::default())
     );
 }
