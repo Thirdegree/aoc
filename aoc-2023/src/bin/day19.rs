@@ -252,8 +252,6 @@ fn main() {
         .map(Into::into)
         .map(|w: Workflow| (w.name.clone(), w))
         .collect();
-    println!(
-        "Day 19 result: {}",
-        solve_part_2(&workflows, &"in".to_string(), ValueRanges::default())
-    );
+    let result = solve_part_2(&workflows, &"in".to_string(), ValueRanges::default());
+    println!("Day 19 result: {result}");
 }
